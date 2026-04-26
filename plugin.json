@@ -1,0 +1,46 @@
+{
+  "name": "dangtran1003/docsmith-v2",
+  "version": "1.5.0",
+  "description": "Documentation skill with markdown intake forms (BA-friendly). Layered config (project + module). Fetches knowledge from Notion/GitHub/Google Drive/URL/files. AI drafts, walkthrough captures screenshots, translates to multiple locales, deploys to Docusaurus. Source change detection via lock file. Re-run safe with KB inheritance, drift detection, and per-block translation review.",
+  "author": "dangtran1003",
+  "license": "MIT",
+  "repository": "https://github.com/dangtran1003/docsmith-v2",
+  "keywords": [
+    "documentation",
+    "technical-writing",
+    "docs-for-developers",
+    "ux-writing",
+    "content-strategy",
+    "prc-010",
+    "tutorial-videos",
+    "docusaurus",
+    "i18n",
+    "deploy",
+    "drift-detection",
+    "re-run-safe",
+    "kb-inheritance",
+    "translation",
+    "i18n-localization",
+    "glossary",
+    "intake-forms",
+    "ba-friendly",
+    "knowledge-fetch",
+    "lean"
+  ],
+  "categories": [
+    "documentation",
+    "writing",
+    "quality-assurance"
+  ],
+  "skills": [
+    {
+      "name": "docsmith",
+      "path": "SKILL.md",
+      "description": "Documentation creation, verification, video recording, and deploy to host project (Docusaurus preset)"
+    }
+  ],
+  "compatibility": {
+    "claude-code": ">=1.0.0",
+    "agentskills": "1.0"
+  }
+}
