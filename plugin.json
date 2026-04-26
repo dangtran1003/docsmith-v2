@@ -1,0 +1,33 @@
+{
+  "name": "dangtran1003/docsmith-v2",
+  "version": "1.1.0",
+  "description": "Structured documentation creation following PRC-010 process. Audience analysis, planning, UX content standards, drafting, self-review, product walkthrough verification, and short tutorial video recording.",
+  "author": "dangtran1003",
+  "license": "MIT",
+  "repository": "https://github.com/dangtran1003/docsmith-v2",
+  "keywords": [
+    "documentation",
+    "technical-writing",
+    "docs-for-developers",
+    "ux-writing",
+    "content-strategy",
+    "prc-010",
+    "tutorial-videos"
+  ],
+  "categories": [
+    "documentation",
+    "writing",
+    "quality-assurance"
+  ],
+  "skills": [
+    {
+      "name": "docsmith",
+      "path": "SKILL.md",
+      "description": "Documentation creation, verification, and tutorial video recording process"
+    }
+  ],
+  "compatibility": {
+    "claude-code": ">=1.0.0",
+    "agentskills": "1.0"
+  }
+}
