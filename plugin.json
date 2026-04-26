@@ -1,7 +1,7 @@
 {
   "name": "dangtran1003/docsmith-v2",
-  "version": "1.1.0",
-  "description": "Structured documentation creation following PRC-010 process. Audience analysis, planning, UX content standards, drafting, self-review, product walkthrough verification, and short tutorial video recording.",
+  "version": "1.2.0",
+  "description": "Standalone documentation workspace + deploy to host project (Docusaurus preset). Audience analysis, planning, UX content standards, drafting, walkthrough verification, tutorial video recording, locale-aware folder structure, deploy with frontmatter injection and image namespacing.",
   "author": "dangtran1003",
   "license": "MIT",
   "repository": "https://github.com/dangtran1003/docsmith-v2",
@@ -12,7 +12,10 @@
     "ux-writing",
     "content-strategy",
     "prc-010",
-    "tutorial-videos"
+    "tutorial-videos",
+    "docusaurus",
+    "i18n",
+    "deploy"
   ],
   "categories": [
     "documentation",
@@ -23,7 +26,7 @@
     {
       "name": "docsmith",
       "path": "SKILL.md",
-      "description": "Documentation creation, verification, and tutorial video recording process"
+      "description": "Documentation creation, verification, video recording, and deploy to host project (Docusaurus preset)"
     }
   ],
   "compatibility": {

@@ -1,18 +1,20 @@
 # docsmith-v2
 
-A Claude Code skill for systematic documentation creation, verification, and short tutorial video recording. Based on the PRC-010 documentation creation process.
+A Claude Code skill for systematic documentation: plan → draft → walkthrough → record → deploy. Standalone-first workspace with optional deploy to Docusaurus or other host projects.
 
 **Sources**: *Docs for Developers* (Bhatti et al., 2021), *Strategic Writing for UX* (Podmajersky, 2019).
 
 ## What it does
 
-Guides you through 13 commands covering the full documentation lifecycle:
+Guides you through 19 commands covering the full documentation lifecycle:
 
+- **Init**: `init` scaffolds a self-contained workspace with `.docsmithrc.yaml`
 - **Plan**: audience profile → documentation plan → sitemap → voice/UX standards
-- **Author**: draft with content type templates → 5-pass self-review
-- **Verify**: live-product walkthrough with caption-matched screenshots → test cases → comprehensive 10-check verification
-- **Record** *(new in 1.1.0)*: capture short tutorial videos from inline `<!-- VIDEO ... -->` markers via browser screen recording
-- **Publish**: peer/tech review → incorporate feedback → publish
+- **Author**: draft (locale-aware) with content type templates → 5-pass self-review
+- **Verify**: live-product walkthrough with caption-matched screenshots → test cases → 10-check verification
+- **Record** *(1.1)*: short tutorial videos from inline `<!-- VIDEO ... -->` markers via browser screen recording
+- **Deploy** *(1.2)*: copy/sync workspace to host project with frontmatter injection, image namespacing, MDX escaping. Supports Docusaurus preset out of the box. `--dry-run` before any write.
+- **Publish**: deploy → review diff → `git commit/push` on target
 
 ## Install
 
@@ -39,40 +41,75 @@ See [PUBLISHING.md](PUBLISHING.md) for all installation methods and marketplace 
 
 ## Quick start
 
+### Standalone (drafting first, deploy later)
+
 ```bash
-/docsmith help              # Show command reference
-/docsmith start MyProduct   # Begin from audience definition
-/docsmith plan MyProduct    # AI generates documentation plan
-/docsmith draft MyProduct   # AI drafts docs with screenshot placeholders + video markers
-/docsmith wt MyProduct      # Walkthrough: capture screenshots, run test cases
-/docsmith rec MyProduct     # Record videos from <!-- VIDEO --> markers (optional)
-/docsmith verify MyProduct  # Run all 10 verification checks
+mkdir my-product-docs && cd my-product-docs
+/docsmith init                              # interactive: slug, locales, preset
+/docsmith audience MyProduct                # define audience
+/docsmith plan MyProduct                    # AI generates plan
+# ... iterate plan / sitemap / voice
+/docsmith draft MyProduct                   # writes to documentation/drafts/en/
+/docsmith wt MyProduct                      # capture screenshots
+/docsmith rec MyProduct                     # (optional) record videos
+/docsmith verify MyProduct
 ```
 
-## What's new in 1.1.0
+### Deploy to Docusaurus
 
-- **`record` command**: tutorial video capture from inline markers, with re-record metadata for product UI changes
-- **Caption rules**: explicit rules for state-not-action descriptions, specific data, label-not-appearance — to make screenshot capture deterministic
-- **Screenshot density**: every procedure must capture starting state, each visible UI change, and success state
-- 3 new templates: `SCREENSHOT_POLICY_TEMPLATE.md`, `VIDEO_MARKER_TEMPLATE.md`, `WALKTHROUGH_VIDEO_PLAN_TEMPLATE.md`
+```bash
+# In .docsmithrc.yaml: set deploy.preset = docusaurus and deploy.default_target
+/docsmith deploy MyProduct --dry-run        # preview: detect target, plan, show diff
+/docsmith deploy MyProduct                  # apply
+cd ../my-docusaurus-site && git diff && git commit
+```
 
-See [CHANGELOG.md](CHANGELOG.md) for the full history.
+### In-place inside an existing Docusaurus project
+
+```bash
+cd my-docusaurus-site
+/docsmith init --in-place                   # auto-detects, sets default_target = .
+# ... draft / wt / rec / deploy as above
+```
+
+## What's new in 1.2.0
+
+- **Standalone-first**: workspace lives independently of host project. Run docsmith anywhere, deploy when ready.
+- **`init` command**: one-shot setup with `.docsmithrc.yaml`, locale-aware folder structure, preset auto-detection.
+- **`deploy` command**: sync workspace to Docusaurus (or other) host project. Frontmatter injection, image namespacing (`/img/<slug>/...`), MDX escaping, audit trail. Always supports `--dry-run`.
+- **`categorize` command**: generate Docusaurus `_category_.json` from sitemap with normalized titles.
+- **Locale folders**: `drafts/<source>/` + `drafts/<target>/` per language. Source gets drafts; targets get scaffolded for v1.6 auto-translation.
+- **Path scoping**: writes validated against allowed roots. No accidental writes outside the configured workspace + deploy target.
+- **Audit trail**: every deploy creates `deployments/<timestamp>-<target>/` with manifest, target config snapshot, diff, pre-deploy hashes.
+
+See [CHANGELOG.md](CHANGELOG.md) for full history including v1.1.0 (caption rules + tutorial videos).
 
 ## File structure
 
 ```
 .
-├── SKILL.md                    # Main skill spec — entry point for Claude
-├── plugin.json                 # Plugin manifest
-├── process-reference.md        # PRC-010 process detail
-├── subprocess-010a.md          # PRC-010A UX content subprocess
-├── tools-reference.md          # Browser automation reference
-├── templates/                  # 12 templates (audience profile, plan, voice chart, etc.)
-├── CHANGELOG.md
-├── PUBLISHING.md
-└── README.md
+├── SKILL.md                         # Main skill spec — entry point for Claude
+├── plugin.json                      # Plugin manifest
+├── .docsmithrc.example.yaml         # Config schema with comments
+├── presets/
+│   ├── standalone.yaml              # Default preset
+│   └── docusaurus.yaml              # Docusaurus deploy mappings
+├── deploy-reference.md              # Deploy command detailed logic
+├── process-reference.md             # PRC-010 process detail
+├── subprocess-010a.md               # PRC-010A UX content subprocess
+├── tools-reference.md               # Browser automation reference
+├── templates/                       # 13 templates
+└── CHANGELOG.md / PUBLISHING.md / README.md
 ```
+
+## Roadmap
+
+- **v1.4**: `generate_sidebars: true` implementation (sidebars.generated.js from sitemap), auto-hide undocumented folders
+- **v1.5**: `adopt` command — convert existing Docusaurus docs into docsmith workspace
+- **v1.6**: `translate` command — AI translation from source locale to target locales with frontmatter/code/UI-label preservation
+- **Future**: mkdocs preset, mintlify preset
 
 ## License
 
 MIT — see plugin.json.
+

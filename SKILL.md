@@ -1,6 +1,6 @@
 ---
 name: docsmith
-description: "Create documentation following the PRC-010 process. Use when asked to create, draft, plan, review, or publish documentation for a product or project. Guides through audience analysis, documentation planning, sitemap creation, UX content standards, drafting, self-review, and product walkthrough. Supports commands: start, audience, plan, review-plan, sitemap, voice, draft, edit, walkthrough, validate, test, verify, peer-review, tech-review, incorporate, publish."
+description: "Create, verify, translate-scaffold, and deploy documentation following the PRC-010 process. Standalone-first workspace; deploys to Docusaurus or other targets via preset. Use when asked to create, draft, plan, review, deploy, or publish documentation for a product or project. Guides through audience analysis, documentation planning, sitemap creation, UX content standards, drafting, self-review, product walkthrough, tutorial video recording, and deploy to host project. Supports commands: init, start, audience, plan, review-plan, sitemap, voice, draft, edit, walkthrough, record, validate, test, verify, peer-review, tech-review, incorporate, publish, categorize, deploy."
 ---
 
 # Docsmith — PRC-010: Documentation Creation Process
@@ -14,13 +14,14 @@ Parse `$ARGUMENTS` to determine which command to run. If no command is given or 
 | Command       | Alias | Owner  | Description                                                                                                                               |
 | ------------- | ----- | ------ | ----------------------------------------------------------------------------------------------------------------------------------------- |
 | `help`        | `h`   | —      | Show this command reference                                                                                                               |
-| `start`       | —     | —      | Begin the full process from the first human step                                                                                          |
+| `init`        | `i`   | **AI** | Initialize a docsmith workspace: create `.docsmithrc.yaml`, `documentation/` folders, locale dirs                                         |
+| `start`       | —     | —      | Begin the full process from the first human step (assumes `init` has been run)                                                            |
 | `audience`    | `aud` | Human  | Define audience and goals → Audience Profile                                                                                              |
 | `plan`        | `pl`  | **AI** | Create documentation plan + traceability matrix                                                                                           |
 | `review-plan` | `rp`  | Human  | Review and approve the documentation plan                                                                                                 |
 | `sitemap`     | `sm`  | **AI** | Create sitemap (folder structure, navigation, cross-links)                                                                                |
 | `voice`       | `vc`  | **AI** | UX content standards (voice chart, text patterns, scorecard)                                                                              |
-| `draft`       | `dr`  | **AI** | Draft documentation using content type templates                                                                                          |
+| `draft`       | `dr`  | **AI** | Draft documentation using content type templates (in `drafts/{source-locale}/`)                                                          |
 | `edit`        | `ed`  | **AI** | Self-review edit (5 passes)                                                                                                               |
 | `walkthrough` | `wt`  | **AI** | Product walkthrough (browser verification + screenshots)                                                                                  |
 | `record`      | `rec` | **AI** | Record short tutorial videos from `<!-- VIDEO ... -->` markers (browser screen recording)                                                 |
@@ -30,12 +31,15 @@ Parse `$ARGUMENTS` to determine which command to run. If no command is given or 
 | `peer-review` | `pr`  | Human  | Peer review                                                                                                                               |
 | `tech-review` | `tr`  | Human  | Technical review (optional)                                                                                                               |
 | `incorporate` | `inc` | **AI** | Incorporate review feedback into documents                                                                                                |
-| `publish`     | `pub` | Human  | Approve and publish                                                                                                                       |
+| `categorize`  | `cat` | **AI** | Generate `_category_.json` files from sitemap; normalize titles; flag undocumented folders (Docusaurus preset)                            |
+| `deploy`      | `dep` | **AI** | Copy/sync workspace into target host project with transforms (frontmatter, image refs, etc.). Supports `--dry-run` and `--target <path>`. |
+| `publish`     | `pub` | Human  | Approve and publish (typically `git commit && push` on the deploy target after `deploy`)                                                  |
 
 ### Examples
 
 ```
 /docsmith help
+/docsmith init                                  # one-time setup; creates .docsmithrc.yaml
 /docsmith start MyProduct
 /docsmith plan MyProduct
 /docsmith draft MyProduct
@@ -44,14 +48,17 @@ Parse `$ARGUMENTS` to determine which command to run. If no command is given or 
 /docsmith wt MyProduct
 /docsmith rec MyProduct
 /docsmith verify MyProduct
-/docsmith verify MyProduct docs/drafts/getting-started.md
-/docsmith verify MyProduct docs/drafts/api-*
+/docsmith verify MyProduct documentation/drafts/en/getting-started.md
+/docsmith categorize MyProduct                  # Docusaurus _category_.json files
+/docsmith deploy MyProduct --dry-run            # preview deploy
+/docsmith deploy MyProduct                      # apply deploy to default_target
+/docsmith deploy MyProduct --target ../other-site --dry-run
 ```
 
 ## Process Flow
 
 ```
-audience (Human) → plan (AI) → review-plan (Human) → sitemap (AI) → voice (AI) → draft (AI) → edit (AI) → walkthrough (AI) → [record (AI, optional)] → peer-review (Human) → [tech-review (Human, optional)] → incorporate (AI) → publish (Human)
+init (AI, once) → audience (Human) → plan (AI) → review-plan (Human) → sitemap (AI) → voice (AI) → draft (AI) → edit (AI) → walkthrough (AI) → [record (AI, optional)] → peer-review (Human) → [tech-review (Human, optional)] → incorporate (AI) → [categorize (AI, Docusaurus preset)] → deploy (AI) → publish (Human)
 ```
 
 **Decision points:**
@@ -60,11 +67,85 @@ audience (Human) → plan (AI) → review-plan (Human) → sitemap (AI) → voic
 - After `peer-review`: Passes review? No → back to `draft`
 - After `peer-review`: Technical review needed? Yes → `tech-review` → `incorporate`
 
+## Configuration
+
+Every docsmith command (after `init`) reads `.docsmithrc.yaml` from the current working directory before doing anything. This file scopes paths and prevents writes outside the configured workspace.
+
+If `.docsmithrc.yaml` is missing when a non-`init`/`help` command is invoked, **stop and run `init` first**.
+
+Key fields (full schema in [.docsmithrc.example.yaml](.docsmithrc.example.yaml)):
+
+- `product.slug` — image namespace (e.g. `mycloud` → `/img/mycloud/...`). Globally unique.
+- `locales.source` / `locales.targets` — source language and translation targets. v1.2.0 scaffolds folder structure; auto-translation deferred to v1.6.
+- `paths.workspace` — where working files live (default `documentation/`).
+- `deploy.default_target` — host project path. Empty = standalone.
+- `deploy.preset` — `standalone` (default) or `docusaurus`. See [presets/](presets/).
+
+Presets define defaults for `deploy` and `categorize`. Read the relevant preset file (`presets/<preset>.yaml`) at the start of any command that produces deploy-bound output.
+
+## Path Scoping (Safety)
+
+Commands MUST NOT write outside the workspace and configured deploy target. This includes:
+
+- Workspace writes: only inside `paths.workspace` (default `documentation/`)
+- Deploy writes: only inside `deploy.default_target` (or `--target <path>` override)
+- Audit writes: inside `paths.deployments`
+- Reading: anywhere is allowed (e.g., reading host project's CLAUDE.md, docusaurus.config)
+
+Before any write, validate the absolute target path is inside one of the allowed roots. Reject otherwise with a clear error. This is the core safety guarantee for running docsmith inside or alongside an existing project.
+
 ## Command Details
 
 ### `help`
 
 Display the command reference table above. No other action.
+
+### `init` (AI)
+
+**Purpose**: Initialize a docsmith workspace at the current directory. One-time setup.
+
+**Inputs (interactive)**:
+- Product slug (lowercase, kebab-case, globally unique across products sharing a Docusaurus target)
+- Product name (display)
+- Source locale (default `en`)
+- Target locales (optional, comma-separated; e.g. `vi,jp`)
+- Deploy preset (`standalone` or `docusaurus`)
+- Deploy target path (if Docusaurus): existing project path or `.` for in-place
+
+**Behavior**:
+
+1. If `.docsmithrc.yaml` already exists, abort with message; suggest `init --force` (overwrites only after showing diff and explicit human confirmation)
+2. If running in a directory that already contains files, list them and confirm — never silently overwrite anything
+3. Detect host project context to suggest preset:
+   - `docusaurus.config.{js,ts,mjs}` present → suggest `docusaurus` preset
+   - Otherwise → `standalone`
+4. If preset is `docusaurus` and a target is provided, run a non-destructive **target inspection**:
+   - Read `<target>/CLAUDE.md` if present
+   - Parse `<target>/docusaurus.config.*` for `i18n`, `docs`, `static` paths
+   - Show user what was detected, confirm before writing config
+5. Write `.docsmithrc.yaml` with chosen values (use [.docsmithrc.example.yaml](.docsmithrc.example.yaml) as the template, comment lines explaining each field preserved)
+6. Create workspace directories:
+   ```
+   documentation/
+   ├── plan/
+   ├── standards/
+   ├── drafts/<source-locale>/         # always created
+   ├── drafts/<each-target-locale>/    # empty placeholder, README explains
+   ├── walkthrough/
+   │   ├── test-cases/
+   │   ├── video-plan/
+   │   └── executions/
+   ├── images/
+   └── videos/
+   deployments/                        # audit trail folder, empty
+   ```
+7. For each target locale folder, write a `README.md` explaining: this folder is empty until v1.6 auto-translation; until then, copy from `drafts/<source>/` and translate manually
+8. Print next-step guidance: usually `/docsmith audience <product>`
+
+**Does NOT**:
+- Touch any file outside the chosen workspace
+- Run any other docsmith command automatically
+- Modify the deploy target — that's `deploy`'s job
 
 ### `start`
 
@@ -113,12 +194,16 @@ Runs the subprocess: define product principles (ask human) → build voice chart
 
 ### `draft` (AI)
 
-**Requires**: Approved plan, sitemap, voice chart, UX text patterns
+**Requires**: Approved plan, sitemap, voice chart, UX text patterns, `.docsmithrc.yaml`
 Read [process-reference.md](process-reference.md) § STEP-005. Use templates from:
 
 - [templates/CONTENT_TYPE_TEMPLATES.md](templates/CONTENT_TYPE_TEMPLATES.md)
 
-Draft each document in the plan. Use `![Caption](https://placehold.co/600x400)` for screenshot placeholders, following the rules in [templates/SCREENSHOT_POLICY_TEMPLATE.md](templates/SCREENSHOT_POLICY_TEMPLATE.md).
+Draft each document in the plan. **Output location**: `documentation/drafts/<locales.source>/<path>.md`. Drafts are written ONLY in the source locale; target locale folders stay empty until v1.6 auto-translation (or until user manually translates).
+
+Use `![Caption](https://placehold.co/600x400)` for screenshot placeholders, following the rules in [templates/SCREENSHOT_POLICY_TEMPLATE.md](templates/SCREENSHOT_POLICY_TEMPLATE.md).
+
+**Image reference style**: use **workspace-absolute** paths in markdown — `![Caption](/images/<feature>/<asset>.png)`. Walkthrough writes captured images to `documentation/images/<feature>/<asset>.png` and updates these refs. The `deploy` command (Docusaurus preset) rewrites `/images/X` → `/img/<product.slug>/X` and copies image files to target's static folder.
 
 **Screenshot density** (mandatory, applies to every procedure-style doc):
 
@@ -258,41 +343,150 @@ Explain when technical review is needed (multi-system integrations, unfamiliar d
 **Requires**: Review feedback
 Read [process-reference.md](process-reference.md) § STEP-010. Process feedback one reviewer at a time, prioritize what helps the user most for contradictions.
 
+### `categorize` (AI) — Docusaurus categories
+
+**Requires**: `deploy.preset = docusaurus`, sitemap, drafts ready
+
+Generate `_category_.json` files for documented folders, and normalize sitemap titles. Can run standalone or as part of `deploy`. Read [deploy-reference.md](deploy-reference.md) § "Categorize subcommand" for full logic.
+
+**Behavior**:
+
+1. Read `documentation/plan/sitemap.md`
+2. Walk target docs folder structure (or workspace drafts if running before deploy)
+3. For each folder in sitemap:
+   - Generate `_category_.json` with normalized title from sitemap and order from sitemap position
+   - Use `link.type: generated-index` so Docusaurus auto-creates a category landing page
+4. For folders NOT in sitemap: list them, do not touch — these are "undocumented folders". Output guidance on how to hide (see [deploy-reference.md](deploy-reference.md) § "Limitations")
+5. Normalize titles in sitemap itself: title-case rules consistent across siblings (acronyms uppercase, articles lowercase mid-title, first/last word capitalized)
+6. Report any sibling-title inconsistencies
+
+**Does NOT**: write to `sidebars.js` unless `generate_sidebars: true` is explicitly set.
+
+### `deploy` (AI) — Sync to host project
+
+**Requires**: `.docsmithrc.yaml` configured with a deploy target, drafts complete, walkthrough done (no `placehold.co` placeholders remain unless `validation.fail_on_placeholder: false`)
+
+Copy/sync workspace artifacts into the configured host project with transforms (frontmatter injection, image ref rewriting, MDX escaping). Read [deploy-reference.md](deploy-reference.md) for full logic.
+
+**Flags**:
+- `--dry-run` — detect + plan, print, exit. No writes.
+- `--target <path>` — override `deploy.default_target` for this run
+- `--force` — override conflicts on files where target differs from workspace
+- `--locale <locale>` — deploy only one locale (default: all configured locales with non-empty drafts)
+
+**High-level workflow**:
+
+1. **Detect** target project context (CLAUDE.md, docusaurus.config.*, folder signals). See [deploy-reference.md](deploy-reference.md) § "Detection phase". On first deploy to a target, REQUIRE human confirmation of detected config.
+2. **Plan** the file actions (create / update / skip / conflict). See [deploy-reference.md](deploy-reference.md) § "Plan phase".
+3. **Show plan** to user. If `--dry-run`, exit here.
+4. **Apply** if no unresolved conflicts:
+   - Create `deployments/<timestamp>-<target-name>/` audit folder
+   - Execute file actions in order
+   - For each markdown file: read → transform (frontmatter, image refs, MDX escape) → write
+   - For binaries: copy bytes
+   - Generate `_category_.json` files via `categorize` if `generate_categories: true`
+5. **Save** manifest, target-config snapshot, diff summary, pre-deploy hashes (for manual rollback)
+6. **Print** summary
+
+**Path scoping**: validate every target absolute path is inside the configured target root before writing. Reject otherwise. This is the safety net against AI-generated bugs ever writing into unrelated parts of the host project.
+
+**Standalone preset**: deploy is a no-op. Print message that the workspace is the publishable artifact.
+
+**In-place mode**: when `default_target = .`, workspace and target share a project. Mappings still apply (e.g. `documentation/drafts/en/foo.md` → `docs/foo.md`). Audit trail still created.
+
 ### `publish` (Human)
 
-Provide the user with a publication checklist:
+The `deploy` command writes to the target project but does NOT commit. Publication is the human step that follows.
 
-1. Final sign-off on content quality
+Checklist:
+
+1. Final sign-off on content quality (review the deploy summary, eyeball the diff in target project)
 2. Coordinate with code/product release if applicable
-3. Publish to documentation platform
-4. Announce to users
+3. In the target project: `git diff` → `git add` → `git commit` → `git push`
+4. Trigger documentation platform build if not auto-triggered
+5. Verify live site shows expected content
+6. Announce to users
 
 ## File Organization
 
-All documentation outputs should be saved under a project-specific directory:
+Docsmith uses a **workspace + target** model. The workspace is always present; the target depends on the deploy preset.
+
+### Workspace (always)
+
+Created by `init`. All docsmith commands write here:
 
 ```
-docs/
-├── plan/
-│   ├── audience-profile.md
-│   ├── documentation-plan.md
-│   ├── traceability-matrix.md
-│   └── sitemap.md
-├── standards/
-│   ├── voice-chart.md
-│   ├── ux-text-patterns.md
-│   ├── content-scorecard.md
-│   └── screenshot-policy.md
-├── drafts/
-│   └── [doc-name].md
-├── walkthrough/
-│   ├── test-cases/
-│   ├── video-plan/
-│   └── executions/
-├── images/
-│   └── [feature]/[asset-name].png
-└── videos/
-    ├── raw/
-    │   └── [video-id].mov
-    └── [video-id].mp4
+<project-root>/
+├── .docsmithrc.yaml                        # Config — read by every command
+├── documentation/                          # Workspace root (paths.workspace)
+│   ├── plan/
+│   │   ├── audience-profile.md
+│   │   ├── documentation-plan.md
+│   │   ├── traceability-matrix.md
+│   │   └── sitemap.md
+│   ├── standards/
+│   │   ├── voice-chart.md
+│   │   ├── ux-text-patterns.md
+│   │   ├── content-scorecard.md
+│   │   └── screenshot-policy.md
+│   ├── drafts/
+│   │   ├── en/                             # Source locale (locales.source)
+│   │   │   └── [doc-name].md
+│   │   ├── vi/                             # Target locales (locales.targets)
+│   │   │   └── README.md                   # Until v1.6 auto-translation
+│   │   └── jp/
+│   │       └── README.md
+│   ├── walkthrough/
+│   │   ├── test-cases/
+│   │   ├── video-plan/
+│   │   └── executions/
+│   ├── images/
+│   │   └── [feature]/[asset-name].png      # Refs use /images/[feature]/...
+│   └── videos/
+│       ├── raw/
+│       │   └── [video-id].mov              # NOT committed; .gitignore'd
+│       └── [video-id].mp4                  # Committed
+└── deployments/                            # Audit trail (paths.deployments)
+    └── 2026-04-26-103044-mycloud-docusaurus/
+        ├── manifest.yaml
+        ├── target-config.yaml
+        ├── diff.md
+        └── pre-deploy-state.txt
 ```
+
+### Target — Docusaurus preset
+
+After `deploy`, the target project receives:
+
+```
+<deploy.default_target>/
+├── docs/                                   # docusaurus.docs_path
+│   ├── _category_.json                     # Generated by categorize
+│   ├── getting-started.md                  # From drafts/en/getting-started.md
+│   └── instances/
+│       ├── _category_.json
+│       └── create.md
+├── i18n/                                   # docusaurus.i18n_path (multi-locale)
+│   └── vi/
+│       └── docusaurus-plugin-content-docs/
+│           └── current/
+│               ├── getting-started.md      # From drafts/vi/getting-started.md
+│               └── instances/create.md
+└── static/                                 # docusaurus.static_path
+    ├── img/
+    │   └── mycloud/                        # docusaurus.image_subpath
+    │       └── instances/create-form-filled.png
+    └── videos/
+        └── mycloud/                        # docusaurus.video_subpath
+            └── instance-create-tour.mp4
+```
+
+Image refs in deployed markdown are absolute: `/img/mycloud/instances/create-form-filled.png`.
+
+### Target — standalone preset
+
+No deploy. Workspace IS the publishable artifact. Drafts use relative refs `/images/[feature]/[asset].png` from workspace root.
+
+### In-place mode
+
+When `deploy.default_target = .`, workspace and target are the same project. The `documentation/` workspace and the `docs/` Docusaurus folder coexist as siblings. `deploy` still produces audit trail in `deployments/`.

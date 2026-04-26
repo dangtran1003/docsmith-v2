@@ -1,0 +1,76 @@
+# .docsmithrc.example.yaml
+# Copy this file to `.docsmithrc.yaml` at the root of your documentation
+# workspace and customize. Every docsmith command reads this file before
+# doing anything — it scopes paths and prevents writes outside the workspace.
+
+product:
+  slug: mycloud                  # Short identifier. Used as image namespace
+                                 # (e.g. /img/mycloud/...) — must be globally
+                                 # unique across all your products. Lowercase,
+                                 # kebab-case, no spaces.
+  name: "MyCloud"                # Human-readable name, used in titles.
+
+# Languages
+locales:
+  source: en                     # Draft language. AI generates docs here.
+  targets: []                    # Translation targets. v1.2.0 scaffolds the
+                                 # folder structure but does not auto-translate.
+                                 # Translation is on the v1.6 roadmap.
+                                 # Examples: [vi, jp], [vi, jp, fr]
+
+# Workspace paths (relative to project root where this file lives)
+paths:
+  workspace: documentation/      # All docsmith working files live here
+  deployments: deployments/      # Audit trail of past deploys
+
+# Deploy target (where docs get copied for publishing)
+deploy:
+  default_target: ""             # Path to host project. Empty = standalone mode.
+                                 # Examples:
+                                 #   ../mycloud-docusaurus    (sibling project)
+                                 #   .                        (in-place mode)
+                                 #   /home/user/site          (absolute)
+  preset: standalone             # standalone | docusaurus
+                                 # See presets/<preset>.yaml for defaults.
+  on_collision: warn             # warn | skip | overwrite | prompt
+                                 # What to do when a target file exists with
+                                 # different content. `prompt` asks per file.
+
+# Docusaurus-specific options (only applied when preset = docusaurus)
+docusaurus:
+  # All paths below are RELATIVE TO TARGET PROJECT ROOT.
+  # Most can be auto-detected from docusaurus.config.{js,ts}; values here are
+  # overrides if detection fails or if the target uses non-standard paths.
+  docs_path: docs
+  i18n_path: i18n
+  static_path: static
+  image_subpath: img/{product.slug}    # Becomes /img/mycloud/... in refs
+  video_subpath: videos/{product.slug}
+
+  # Frontmatter & sidebars
+  inject_frontmatter: true       # Add Docusaurus frontmatter on deploy.
+                                 # Drafts in workspace stay frontmatter-free.
+  generate_categories: true      # Generate _category_.json from sitemap.
+  generate_sidebars: false       # Generate sidebars.generated.js from sitemap.
+                                 # Default false to avoid overriding user's
+                                 # custom sidebars.js. Enable explicitly.
+
+  # Read host project context before deploy
+  read_target_claude_md: true    # If <target>/CLAUDE.md exists, read it for
+                                 # any docsmith hints / project conventions.
+
+# Image collision avoidance
+images:
+  collision_strategy: namespace  # namespace | namespace-hash | namespace-versioned
+                                 # namespace        — slug prefix only (clean)
+                                 # namespace-hash   — also content-hash check,
+                                 #                    warn on different content
+                                 # namespace-versioned — append timestamp
+                                 #                    (creates clutter, avoid)
+
+# Validation behavior
+validation:
+  fail_on_placeholder: true      # Block deploy if any placehold.co URL remains
+  fail_on_unresolved_video: true # Block deploy if <!-- VIDEO --> markers exist
+                                 # without recordings
+  fail_on_missing_caption: false # Warn (not block) on captions failing rules
