@@ -3,6 +3,61 @@
 All notable changes to this skill are documented in this file.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Semantic Versioning](https://semver.org/).
 
+## [1.3.0] - 2026-04-26
+
+Re-run safety + drift detection + delete propagation. Doc CRUD becomes deterministic.
+
+### Added
+
+- **Re-run protocol**: every command checks output existence before writing. 4-option gate when exists: Update / Overwrite / Side-by-side / Cancel. Default `prompt`; configurable via `behavior.on_existing` in `.docsmithrc.yaml`.
+- **KB inheritance**: in Update mode, AI reads existing artifact in full as canonical knowledge base. Generates 4-kind delta proposal (NEW / UPDATE / REMOVE / KEEP). User approves per-item. Untouched content (KEEP) is NEVER regenerated — preserves team's manual edits.
+- **Per-artifact merge logic**: detailed rules per artifact type (audience, plan, sitemap, voice, drafts, test cases) in [update-reference.md](update-reference.md).
+- **Walkthrough 3-phase pipeline**:
+  - Phase A (`--check`): VERIFY only — read drafts, run assertions, output drift report. Read-only, fast (~30s for moderate doc set).
+  - Gate: user reviews drift report, sets per-item decisions in `decisions.yaml` (auto-fix / manual-fix / product-bug / skip).
+  - Phase B (`--apply`): UPDATE drafts per decisions.
+  - Phase C: CAPTURE screenshots.
+  - Default mode (no flags): runs A → interactive gate → B → C in sequence.
+  - `--skip-drift` flag: Phase C only (backward compatible with 1.2.x usage).
+  - `--auto-apply-high-confidence` flag: skip gate, auto-apply HIGH confidence fixes only.
+- **Product-bug tracking** (optional, non-blocking): drift items can be marked `product-bug` (doc is correct, UI has regression). Tracked in `walkthrough/active-product-bugs.yaml` across runs. Auto-resolved when UI matches doc again.
+- **Delete propagation**: `deploy` always lists "Orphan files in target" in plan output. With `--sync-deletes` flag, executes deletes after copies (with backup to `deployments/<ts>/deleted/`). Default: never delete (safe).
+- **Drift report template** ([templates/DRIFT_REPORT_TEMPLATE.md](templates/DRIFT_REPORT_TEMPLATE.md)): format spec, confidence rubric, decision values.
+- **Merge decision template** ([templates/MERGE_DECISION_TEMPLATE.md](templates/MERGE_DECISION_TEMPLATE.md)): on-disk format for re-run protocol audit.
+- **Update reference doc** ([update-reference.md](update-reference.md)): full re-run + KB inheritance + drift + delete propagation logic.
+- **Archive folder**: `documentation/archive/<timestamp>/` for re-run backups.
+- **Drift folder**: `documentation/walkthrough/drift/<timestamp>/` for drift detection runs.
+
+### Changed
+
+- **`draft` / `plan` / `sitemap` / `voice`**: now subject to re-run protocol gate when output already exists. Update mode reads existing as KB and proposes deltas only.
+- **`walkthrough`**: refactored from single-pass to 3-phase pipeline. Default mode unchanged externally (still works without flags), but internally adds drift verification before fix-and-capture.
+- **`deploy`**: plan output always includes "Orphan files in target" section. New `--sync-deletes` flag opts into actual deletion.
+- **`.docsmithrc.yaml` schema**: added `behavior.on_existing`, `behavior.drift_default_action`, `behavior.side_by_side_suffix_style`, `deploy.sync_deletes`, `deploy.audit_retention_days`.
+
+### Deferred to future versions
+
+- **Visual regression** in walkthrough (pixel-diff between captured screenshots and previous): on v1.4 roadmap.
+- **`migrate` command** for `.docsmithrc.yaml` schema changes between major versions: on v1.4 roadmap if needed.
+- **`health` command** as a one-shot wrapper of verify + drift + compare: v1.5 roadmap.
+- **Translation** (auto-translate from source locale): v1.6 roadmap (unchanged).
+- **`adopt` command** (convert existing Docusaurus docs into workspace): v1.5 roadmap (unchanged).
+
+### Migration from 1.2.x
+
+No breaking changes. New behavior is opt-in via flags:
+
+- All v1.2.x command invocations continue to work without modification
+- First re-run of any command on existing output will trigger the new gate; choose Update mode to merge with existing
+- `walkthrough --skip-drift` mimics v1.2.x behavior exactly if you want to defer adopting drift detection
+
+To adopt fully:
+
+1. Pull v1.3.0 (`git pull` or `/plugin marketplace update`)
+2. Optionally edit `.docsmithrc.yaml` to add `behavior:` block (see [.docsmithrc.example.yaml](.docsmithrc.example.yaml))
+3. Run `/docsmith walkthrough <product> --check` after your next product release to see drift detection in action
+4. Use `/docsmith deploy <product> --sync-deletes --dry-run` after deleting any drafts to preview cleanup
+
 ## [1.2.1] - 2026-04-26
 
 ### Added

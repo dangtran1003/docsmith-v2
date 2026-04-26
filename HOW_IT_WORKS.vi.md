@@ -401,7 +401,47 @@ cp documentation/drafts/en/foo.md documentation/drafts/vi/foo.md
 
 ---
 
-## 9. Mental model: skill = prompt, không phải program
+## 9. Re-run command an toàn (1.3.0+)
+
+Docsmith không cho phép silent overwrite. Mọi command check xem output đã tồn tại chưa, nếu có sẽ show gate 4 lựa chọn:
+
+| Lựa chọn | Khi nào dùng |
+|---|---|
+| **Update** (khuyên dùng) | Content cũ đã có edit từ team đáng giữ. AI đọc cái cũ làm KB, propose delta, apply từng item. |
+| **Overwrite** | Cái cũ đã quá outdated, muốn viết mới. File gốc archive vào `documentation/archive/<timestamp>/`. |
+| **Side-by-side** | So sánh hoặc rewrite lớn. File mới có suffix `-v2`. |
+| **Cancel** | Hủy. |
+
+**Quy tắc Update mode**: AI đọc content cũ là **canonical** và chỉ propose delta (NEW / UPDATE / REMOVE / KEEP). Section không thay đổi được giữ nguyên verbatim. Đây là quan trọng — không có quy tắc này thì mỗi re-run sẽ silently mất edit thủ công của team.
+
+**Drift detection** (riêng walkthrough) là pipeline 3 phase:
+
+```
+A: VERIFY  /docsmith wt --check         → drift-report.md (read-only)
+   ↓
+   GATE    Edit decisions.yaml          (auto-fix / manual-fix / product-bug / skip)
+   ↓
+B: APPLY   /docsmith wt --apply         → update drafts theo decisions
+   ↓
+C: CAPTURE                              → screenshots
+```
+
+Item marked `product-bug` (doc đúng, UI bị regression) được track trong `walkthrough/active-product-bugs.yaml` qua nhiều run. Không bị re-flag cho đến khi UI khớp lại với doc, lúc đó tự auto-resolve.
+
+**Delete propagation**: khi bạn xóa 1 draft, `deploy` report orphan file ở target nhưng mặc định KHÔNG xóa. Dùng `--sync-deletes` để thực sự cleanup:
+
+```bash
+/docsmith deploy MyProduct --sync-deletes --dry-run    # preview xóa
+/docsmith deploy MyProduct --sync-deletes              # apply
+```
+
+File ở target bị xóa được backup vào `deployments/<ts>/deleted/` để audit.
+
+Logic đầy đủ và quy tắc merge per-artifact: xem [update-reference.md](update-reference.md).
+
+---
+
+## 10. Mental model: skill = prompt, không phải program
 
 Đây là điều quan trọng nhất cần internalize.
 
@@ -427,7 +467,7 @@ Trade-off này (linh hoạt thay cho deterministic) chính là điểm cốt lõ
 
 ---
 
-## 10. Cheat-sheet workflow hằng ngày
+## 11. Cheat-sheet workflow hằng ngày
 
 ```bash
 # Setup 1 lần
@@ -464,7 +504,7 @@ git diff && git add . && git commit -m "Update docs" && git push
 
 ---
 
-## 11. Khi có vấn đề, xem ở đâu
+## 12. Khi có vấn đề, xem ở đâu
 
 | Triệu chứng                                          | Xem                                                                          |
 | ---------------------------------------------------- | ---------------------------------------------------------------------------- |
@@ -482,7 +522,7 @@ git diff && git add . && git commit -m "Update docs" && git push
 
 ---
 
-## 12. Đọc tiếp gì
+## 13. Đọc tiếp gì
 
 - [.docsmithrc.example.yaml](.docsmithrc.example.yaml) — schema config có comment
 - [SKILL.md](SKILL.md) — command reference đầy đủ (đây là cái Claude đọc)

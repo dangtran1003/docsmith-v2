@@ -401,7 +401,47 @@ cp documentation/drafts/en/foo.md documentation/drafts/vi/foo.md
 
 ---
 
-## 9. Mental model: skill = prompt, not program
+## 9. Re-running commands safely (1.3.0+)
+
+Docsmith doesn't trust silent overwrites. Every command checks if its output already exists, and if so, presents a 4-option gate:
+
+| Option | When to use |
+|---|---|
+| **Update** (recommended) | Existing content has team edits worth preserving. AI reads existing as KB, proposes deltas, applies per item. |
+| **Overwrite** | Existing is stale; want fresh. Original archived to `documentation/archive/<timestamp>/`. |
+| **Side-by-side** | Comparison or major rewrite. New file gets `-v2` suffix. |
+| **Cancel** | Abort. |
+
+**Update mode rule**: AI reads existing content as **canonical** and proposes only deltas (NEW / UPDATE / REMOVE / KEEP). Untouched sections are preserved verbatim. This is critical — without this rule, every re-run would silently lose team's manual edits.
+
+**Drift detection** (walkthrough specifically) is a 3-phase pipeline:
+
+```
+A: VERIFY  /docsmith wt --check         → drift-report.md (read-only)
+   ↓
+   GATE    Edit decisions.yaml          (auto-fix / manual-fix / product-bug / skip)
+   ↓
+B: APPLY   /docsmith wt --apply         → update drafts per decisions
+   ↓
+C: CAPTURE                              → screenshots
+```
+
+Items marked `product-bug` (doc is correct, UI has regression) are tracked in `walkthrough/active-product-bugs.yaml` across runs. They're not re-flagged until UI matches doc again, then auto-resolved.
+
+**Delete propagation**: when you delete a draft, `deploy` reports orphan files in target but doesn't delete by default. Use `--sync-deletes` to actually clean up:
+
+```bash
+/docsmith deploy MyProduct --sync-deletes --dry-run    # preview deletions
+/docsmith deploy MyProduct --sync-deletes              # apply
+```
+
+Deleted target files are backed up to `deployments/<ts>/deleted/` for audit.
+
+For full logic and per-artifact merge rules, see [update-reference.md](update-reference.md).
+
+---
+
+## 10. Mental model: skill = prompt, not program
 
 This is the most important thing to internalize.
 
@@ -427,7 +467,7 @@ This trade-off (flexibility over determinism) is the whole point of the skill fo
 
 ---
 
-## 10. Daily workflow cheat-sheet
+## 11. Daily workflow cheat-sheet
 
 ```bash
 # One-time setup
@@ -464,7 +504,7 @@ git diff && git add . && git commit -m "Update docs" && git push
 
 ---
 
-## 11. Where to look when something breaks
+## 12. Where to look when something breaks
 
 | Symptom                                            | Look at                                                                      |
 | -------------------------------------------------- | ---------------------------------------------------------------------------- |
@@ -482,7 +522,7 @@ git diff && git add . && git commit -m "Update docs" && git push
 
 ---
 
-## 12. What to read next
+## 13. What to read next
 
 - [.docsmithrc.example.yaml](.docsmithrc.example.yaml) — annotated config schema
 - [SKILL.md](SKILL.md) — full command reference (this is what Claude reads)

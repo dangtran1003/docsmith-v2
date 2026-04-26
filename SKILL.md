@@ -1,6 +1,6 @@
 ---
 name: docsmith
-description: "Create, verify, translate-scaffold, and deploy documentation following the PRC-010 process. Standalone-first workspace; deploys to Docusaurus or other targets via preset. Use when asked to create, draft, plan, review, deploy, or publish documentation for a product or project. Guides through audience analysis, documentation planning, sitemap creation, UX content standards, drafting, self-review, product walkthrough, tutorial video recording, and deploy to host project. Supports commands: init, start, audience, plan, review-plan, sitemap, voice, draft, edit, walkthrough, record, validate, test, verify, peer-review, tech-review, incorporate, publish, categorize, deploy."
+description: "Create, verify, update, and deploy documentation following the PRC-010 process. Standalone-first workspace; deploys to Docusaurus or other targets via preset. Re-run safe with update/overwrite/side-by-side gate, KB inheritance, drift detection, delete propagation. Use when asked to create, draft, plan, review, update, deploy, or publish documentation. Supports commands: init, start, audience, plan, review-plan, sitemap, voice, draft, edit, walkthrough, record, validate, test, verify, peer-review, tech-review, incorporate, publish, categorize, deploy."
 ---
 
 # Docsmith — PRC-010: Documentation Creation Process
@@ -41,17 +41,22 @@ Parse `$ARGUMENTS` to determine which command to run. If no command is given or 
 /docsmith help
 /docsmith init                                  # one-time setup; creates .docsmithrc.yaml
 /docsmith start MyProduct
-/docsmith plan MyProduct
-/docsmith draft MyProduct
+/docsmith plan MyProduct                        # 1st run: fresh; 2nd+ run: re-run gate (update/overwrite/side-by-side/cancel)
+/docsmith draft MyProduct                       # same gate per file
 /docsmith validate MyProduct
 /docsmith test MyProduct
-/docsmith wt MyProduct
+/docsmith wt MyProduct                          # default: A → gate → B → C
+/docsmith wt MyProduct --check                  # phase A only: drift report, exit
+/docsmith wt MyProduct --apply                  # phase B+C: apply existing decisions, capture
+/docsmith wt MyProduct --skip-drift             # phase C only: capture without drift detection
 /docsmith rec MyProduct
 /docsmith verify MyProduct
 /docsmith verify MyProduct documentation/drafts/en/getting-started.md
 /docsmith categorize MyProduct                  # Docusaurus _category_.json files
-/docsmith deploy MyProduct --dry-run            # preview deploy
+/docsmith deploy MyProduct --dry-run            # preview deploy (always lists orphan target files)
 /docsmith deploy MyProduct                      # apply deploy to default_target
+/docsmith deploy MyProduct --sync-deletes --dry-run   # preview WITH delete propagation
+/docsmith deploy MyProduct --sync-deletes             # delete orphan target files
 /docsmith deploy MyProduct --target ../other-site --dry-run
 ```
 
@@ -80,6 +85,9 @@ Key fields (full schema in [.docsmithrc.example.yaml](.docsmithrc.example.yaml))
 - `paths.workspace` — where working files live (default `documentation/`).
 - `deploy.default_target` — host project path. Empty = standalone.
 - `deploy.preset` — `standalone` (default) or `docusaurus`. See [presets/](presets/).
+- `deploy.sync_deletes` — propagate workspace deletions to target. Default `false`. Override per-run with `--sync-deletes`. (1.3.0+)
+- `behavior.on_existing` — what to do when output already exists. `prompt` (default) / `update` / `overwrite` / `side-by-side`. (1.3.0+)
+- `behavior.drift_default_action` — gate behavior in `walkthrough` drift detection. `prompt` (default) / `auto-apply-high-confidence`. (1.3.0+)
 
 Presets define defaults for `deploy` and `categorize`. Read the relevant preset file (`presets/<preset>.yaml`) at the start of any command that produces deploy-bound output.
 
@@ -93,6 +101,19 @@ Commands MUST NOT write outside the workspace and configured deploy target. This
 - Reading: anywhere is allowed (e.g., reading host project's CLAUDE.md, docusaurus.config)
 
 Before any write, validate the absolute target path is inside one of the allowed roots. Reject otherwise with a clear error. This is the core safety guarantee for running docsmith inside or alongside an existing project.
+
+## Re-run Protocol (Safety)
+
+Every command that produces output MUST check whether the output already exists before writing. If exists, trigger the 4-option gate:
+
+1. **Update** — read existing as KB, propose deltas, apply per-item with user approval. Default for content artifacts.
+2. **Overwrite** — discard existing (archived to `documentation/archive/<timestamp>/`), generate fresh. Requires explicit "OVERWRITE" confirmation.
+3. **Side-by-side** — keep both, new file gets suffix `-v2`/`-v3`/etc. or `-<date>`. For comparison or major rewrite without commitment.
+4. **Cancel** — abort.
+
+**Default**: `prompt` (always ask). Configurable via `behavior.on_existing` in `.docsmithrc.yaml`.
+
+**Critical rule for Update mode**: read existing content as canonical knowledge base. Propose deltas only (NEW / UPDATE / REMOVE / KEEP). Do NOT regenerate untouched sections "for consistency" — that loses team's manual edits. See [update-reference.md](update-reference.md) for full per-artifact merge logic and [templates/MERGE_DECISION_TEMPLATE.md](templates/MERGE_DECISION_TEMPLATE.md) for decision recording format.
 
 ## Command Details
 
@@ -167,6 +188,8 @@ Read [process-reference.md](process-reference.md) § STEP-002. Use templates:
 - [templates/DOCUMENTATION_PLAN_TEMPLATE.md](templates/DOCUMENTATION_PLAN_TEMPLATE.md)
 - [templates/TRACEABILITY_MATRIX_TEMPLATE.md](templates/TRACEABILITY_MATRIX_TEMPLATE.md)
 
+**Re-run safety**: If `documentation-plan.md` or `traceability-matrix.md` already exist, trigger 4-option gate. Update mode: read existing as KB, propose deltas. See [update-reference.md](update-reference.md) § "Per-artifact merge logic".
+
 ### `review-plan` (Human)
 
 Present the documentation plan for human review. Explain approval criteria:
@@ -181,6 +204,8 @@ Present the documentation plan for human review. Explain approval criteria:
 **Requires**: Approved documentation plan
 Read [process-reference.md](process-reference.md) § STEP-004. Define folder structure, navigation sidebar, cross-links, and reading order.
 
+**Re-run safety**: If `sitemap.md` exists, trigger gate. Update mode preserves existing structure, adds new entries in logical position relative to siblings. See [update-reference.md](update-reference.md).
+
 ### `voice` (AI)
 
 **Requires**: Approved documentation plan + audience profile
@@ -192,6 +217,8 @@ Read [subprocess-010a.md](subprocess-010a.md). Use templates:
 
 Runs the subprocess: define product principles (ask human) → build voice chart → review (ask human) → define UX text patterns → create content scorecard → approve (ask human).
 
+**Re-run safety**: If standards files exist, trigger gate. Voice chart updates are particularly sensitive (team consensus); Update mode proposes additions only, never silent changes to existing rules. See [update-reference.md](update-reference.md).
+
 ### `draft` (AI)
 
 **Requires**: Approved plan, sitemap, voice chart, UX text patterns, `.docsmithrc.yaml`
@@ -200,6 +227,8 @@ Read [process-reference.md](process-reference.md) § STEP-005. Use templates fro
 - [templates/CONTENT_TYPE_TEMPLATES.md](templates/CONTENT_TYPE_TEMPLATES.md)
 
 Draft each document in the plan. **Output location**: `documentation/drafts/<locales.source>/<path>.md`. Drafts are written ONLY in the source locale; target locale folders stay empty until v1.6 auto-translation (or until user manually translates).
+
+**Re-run safety**: Before writing each draft file, check existence. If exists, trigger the 4-option gate (see § "Re-run Protocol" above). In Update mode, AI MUST read existing draft as canonical KB and propose deltas only — do not regenerate untouched sections. See [update-reference.md](update-reference.md) § "Per-artifact merge logic > drafts" for full rules and [templates/MERGE_DECISION_TEMPLATE.md](templates/MERGE_DECISION_TEMPLATE.md) for decision recording format.
 
 Use `![Caption](https://placehold.co/600x400)` for screenshot placeholders, following the rules in [templates/SCREENSHOT_POLICY_TEMPLATE.md](templates/SCREENSHOT_POLICY_TEMPLATE.md).
 
@@ -231,22 +260,68 @@ Read [process-reference.md](process-reference.md) § STEP-006. Perform 5 editing
 4. Clarity and brevity
 5. Voice compliance (score with content scorecard, minimum 70% to pass)
 
-### `walkthrough` (AI) — Full walkthrough
+### `walkthrough` (AI) — Verify, fix drift, capture
 
 **Requires**: Edited documents + live product access
-Read [process-reference.md](process-reference.md) § STEP-007 and [tools-reference.md](tools-reference.md). Full workflow:
+Read [process-reference.md](process-reference.md) § STEP-007, [tools-reference.md](tools-reference.md), and [update-reference.md](update-reference.md) § "Drift detection".
 
-1. Create test cases from docs → [templates/WALKTHROUGH_TEST_CASE_TEMPLATE.md](templates/WALKTHROUGH_TEST_CASE_TEMPLATE.md)
-2. Create screenshot capture plan
-3. Execute test cases + capture screenshots in single browser pass
-4. Replace all `placehold.co` placeholders with captured images
-5. Fix any doc failures found
-6. Record results → [templates/WALKTHROUGH_TEST_EXECUTION_TEMPLATE.md](templates/WALKTHROUGH_TEST_EXECUTION_TEMPLATE.md)
-7. Verify zero `placehold.co` references remain
+In v1.3.0, walkthrough is a 3-phase pipeline with a user gate between drift detection and apply:
 
-**Caption-driven matching**: Screenshot content is matched to the placeholder via (1) the caption text, (2) surrounding section/step context, (3) the ordered capture plan. Vague captions are the #1 source of mismatches — if a caption is missing data state or refers to UI by color/position, capture content may be wrong. Before executing the capture plan, present it for human review and flag any caption that fails the rules in [templates/SCREENSHOT_POLICY_TEMPLATE.md](templates/SCREENSHOT_POLICY_TEMPLATE.md).
+#### Phase A — VERIFY (read-only)
 
-**Scope**: Skips `<!-- VIDEO ... -->` markers entirely. Use `record` for those.
+`/docsmith walkthrough <product> --check`
+
+1. Read drafts in scope, build/load test cases → [templates/WALKTHROUGH_TEST_CASE_TEMPLATE.md](templates/WALKTHROUGH_TEST_CASE_TEMPLATE.md)
+2. Open browser, run assertions against live product
+3. **Do NOT modify drafts. Do NOT capture screenshots.**
+4. Output drift report → [templates/DRIFT_REPORT_TEMPLATE.md](templates/DRIFT_REPORT_TEMPLATE.md) at `documentation/walkthrough/drift/<timestamp>/drift-report.md`
+5. Pre-populate `decisions.yaml` with default decisions per item (auto-fix for HIGH, prompt for MEDIUM, skip for LOW)
+6. Exit
+
+#### Gate — User reviews and decides
+
+User opens `decisions.yaml`, sets per-item decision: `auto-fix` / `manual-fix` (with custom_fix) / `product-bug` / `skip`. Optional shortcut flag `--auto-apply-high-confidence` skips this gate.
+
+#### Phase B — UPDATE DOC (apply decisions)
+
+`/docsmith walkthrough <product> --apply`
+
+1. Load latest drift report + decisions.yaml
+2. Apply auto-fix and manual-fix decisions to drafts
+3. Skip product-bug and skip decisions
+4. Save patches → `drift/<ts>/auto-fixes-applied.diff`
+5. Roll updated product-bugs into `walkthrough/active-product-bugs.yaml` (cross-run tracker)
+
+#### Phase C — CAPTURE
+
+After Phase B (or directly when `--skip-drift` is passed):
+
+1. Re-build capture plan from current drafts (now updated)
+2. Present plan for human review (caption check per [templates/SCREENSHOT_POLICY_TEMPLATE.md](templates/SCREENSHOT_POLICY_TEMPLATE.md))
+3. Capture screenshots, replace `placehold.co` placeholders
+4. Record execution → [templates/WALKTHROUGH_TEST_EXECUTION_TEMPLATE.md](templates/WALKTHROUGH_TEST_EXECUTION_TEMPLATE.md)
+5. Verify zero `placehold.co` remain
+
+#### Default mode (no flags)
+
+`/docsmith walkthrough <product>` runs A → gate (interactive) → B → C in sequence. Gate prompts user inline rather than requiring a separate `--apply` invocation. Backward compatible with v1.2.x usage.
+
+#### Flags
+
+- `--check` — Phase A only; produce drift report and exit. Fast (~30s for moderate doc set).
+- `--apply` — Phase B + C using existing decisions.yaml; skip detection.
+- `--skip-drift` — Phase C only; capture without drift detection. For first-time runs or known-clean drafts.
+- `--auto-apply-high-confidence` — skip gate; auto-apply HIGH confidence fixes immediately.
+
+#### Caption-driven matching
+
+Screenshot content is matched to placeholder via (1) caption text, (2) surrounding section/step context, (3) ordered capture plan. Vague captions are the #1 source of mismatches — if a caption is missing data state or refers to UI by color/position, capture content may be wrong. Captions that fail rules in [templates/SCREENSHOT_POLICY_TEMPLATE.md](templates/SCREENSHOT_POLICY_TEMPLATE.md) are flagged before capture.
+
+#### Scope rules
+
+- Skips `<!-- VIDEO ... -->` markers entirely (use `record`)
+- Items in `active-product-bugs.yaml` are skipped from re-flagging until UI matches doc again (then auto-resolved)
+- `walkthrough <product> <doc-glob>` scopes to specific docs (faster iteration)
 
 ### `record` (AI) — Tutorial videos (optional)
 
@@ -373,19 +448,21 @@ Copy/sync workspace artifacts into the configured host project with transforms (
 - `--target <path>` — override `deploy.default_target` for this run
 - `--force` — override conflicts on files where target differs from workspace
 - `--locale <locale>` — deploy only one locale (default: all configured locales with non-empty drafts)
+- `--sync-deletes` — propagate workspace deletions to target. Without this flag, orphan target files are reported but never deleted. See [update-reference.md](update-reference.md) § "Delete propagation".
 
 **High-level workflow**:
 
 1. **Detect** target project context (CLAUDE.md, docusaurus.config.*, folder signals). See [deploy-reference.md](deploy-reference.md) § "Detection phase". On first deploy to a target, REQUIRE human confirmation of detected config.
-2. **Plan** the file actions (create / update / skip / conflict). See [deploy-reference.md](deploy-reference.md) § "Plan phase".
-3. **Show plan** to user. If `--dry-run`, exit here.
+2. **Plan** the file actions (create / update / skip / conflict / delete-if-sync). See [deploy-reference.md](deploy-reference.md) § "Plan phase".
+3. **Show plan** to user. Always include "Orphan files in target" section listing files in target with no source in workspace. If `--dry-run`, exit here.
 4. **Apply** if no unresolved conflicts:
    - Create `deployments/<timestamp>-<target-name>/` audit folder
    - Execute file actions in order
    - For each markdown file: read → transform (frontmatter, image refs, MDX escape) → write
    - For binaries: copy bytes
    - Generate `_category_.json` files via `categorize` if `generate_categories: true`
-5. **Save** manifest, target-config snapshot, diff summary, pre-deploy hashes (for manual rollback)
+   - If `--sync-deletes`: backup orphans to `deployments/<ts>/deleted/`, then delete from target
+5. **Save** manifest (including any deletes), target-config snapshot, diff summary, pre-deploy hashes (for manual rollback)
 6. **Print** summary
 
 **Path scoping**: validate every target absolute path is inside the configured target root before writing. Reject otherwise. This is the safety net against AI-generated bugs ever writing into unrelated parts of the host project.
@@ -439,7 +516,17 @@ Created by `init`. All docsmith commands write here:
 │   ├── walkthrough/
 │   │   ├── test-cases/
 │   │   ├── video-plan/
-│   │   └── executions/
+│   │   ├── executions/
+│   │   ├── drift/                          # 1.3.0+ — drift detection runs
+│   │   │   └── 2026-04-26-103044/
+│   │   │       ├── drift-report.md
+│   │   │       ├── decisions.yaml
+│   │   │       └── auto-fixes-applied.diff
+│   │   └── active-product-bugs.yaml        # 1.3.0+ — cross-run tracker
+│   ├── archive/                            # 1.3.0+ — re-run protocol backups
+│   │   └── 2026-04-26-103044/
+│   │       ├── [original-filename].md
+│   │       └── merge-decisions.yaml
 │   ├── images/
 │   │   └── [feature]/[asset-name].png      # Refs use /images/[feature]/...
 │   └── videos/
@@ -451,7 +538,9 @@ Created by `init`. All docsmith commands write here:
         ├── manifest.yaml
         ├── target-config.yaml
         ├── diff.md
-        └── pre-deploy-state.txt
+        ├── pre-deploy-state.txt
+        └── deleted/                        # 1.3.0+ — backup of removed target files
+            └── docs/instances/legacy.md      (only when --sync-deletes used)
 ```
 
 ### Target — Docusaurus preset

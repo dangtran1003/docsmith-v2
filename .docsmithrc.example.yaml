@@ -35,6 +35,28 @@ deploy:
   on_collision: warn             # warn | skip | overwrite | prompt
                                  # What to do when a target file exists with
                                  # different content. `prompt` asks per file.
+  sync_deletes: false            # 1.3.0+: propagate workspace deletions to
+                                 # target. Default false (safe). Per-run flag:
+                                 # `deploy --sync-deletes`.
+  audit_retention_days: 0        # 1.3.0+: keep deploy audit trails for N days.
+                                 # 0 = forever (recommended).
+
+# Re-run and update behavior (1.3.0+)
+behavior:
+  on_existing: prompt            # prompt | update | overwrite | side-by-side
+                                 # What to do when a docsmith command would
+                                 # write a file that already exists.
+                                 #   prompt        — always ask (default, safe)
+                                 #   update        — read existing as KB, propose deltas
+                                 #   overwrite     — archive existing, regenerate fresh
+                                 #   side-by-side  — keep both, new file gets suffix
+  drift_default_action: prompt   # prompt | auto-apply-high-confidence
+                                 # In `walkthrough` drift detection (Phase A),
+                                 # what to do after the report is generated:
+                                 #   prompt — wait for user to edit decisions.yaml
+                                 #   auto-apply-high-confidence — skip gate;
+                                 #     auto-apply HIGH confidence fixes only
+  side_by_side_suffix_style: numbered   # numbered (-v2, -v3) | date (-2026-04-26)
 
 # Docusaurus-specific options (only applied when preset = docusaurus)
 docusaurus:

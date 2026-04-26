@@ -76,6 +76,15 @@ cd my-docusaurus-site
 # ... draft / wt / rec / deploy as above
 ```
 
+## What's new in 1.3.0
+
+- **Re-run safety**: every command checks output existence first. 4-option gate (Update / Overwrite / Side-by-side / Cancel) when found. Default `prompt`; configurable.
+- **KB inheritance**: in Update mode, AI reads existing artifact as knowledge base. Proposes deltas (NEW / UPDATE / REMOVE / KEEP). Untouched content NEVER regenerated — preserves team's manual edits.
+- **Walkthrough drift detection**: refactored into 3 phases — VERIFY (read-only) → user gate via `decisions.yaml` → APPLY → CAPTURE. New flags: `--check`, `--apply`, `--skip-drift`, `--auto-apply-high-confidence`.
+- **Product-bug tracking**: drift items can be marked as product regressions. Tracked across runs in `active-product-bugs.yaml`. Auto-resolved when UI matches doc again.
+- **Delete propagation**: `deploy` always lists orphan target files. New `--sync-deletes` flag opts into actual cleanup with backup.
+- 2 new templates: `DRIFT_REPORT_TEMPLATE.md`, `MERGE_DECISION_TEMPLATE.md`. New: `update-reference.md`.
+
 ## What's new in 1.2.0
 
 - **Standalone-first**: workspace lives independently of host project. Run docsmith anywhere, deploy when ready.
@@ -108,9 +117,9 @@ See [CHANGELOG.md](CHANGELOG.md) for full history including v1.1.0 (caption rule
 
 ## Roadmap
 
-- **v1.4**: `generate_sidebars: true` implementation (sidebars.generated.js from sitemap), auto-hide undocumented folders
-- **v1.5**: `adopt` command — convert existing Docusaurus docs into docsmith workspace
-- **v1.6**: `translate` command — AI translation from source locale to target locales with frontmatter/code/UI-label preservation
+- **v1.4**: visual regression in walkthrough (pixel-diff), `migrate` command for config schema changes, `generate_sidebars: true` implementation, auto-hide undocumented folders
+- **v1.5**: `adopt` command (convert existing Docusaurus docs into docsmith workspace), `health` command (one-shot wrapper of verify + drift + compare)
+- **v1.6**: `translate` command — AI translation from source locale to target locales
 - **Future**: mkdocs preset, mintlify preset
 
 ## License
