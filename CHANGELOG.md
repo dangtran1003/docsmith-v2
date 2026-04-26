@@ -3,6 +3,81 @@
 All notable changes to this skill are documented in this file.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Semantic Versioning](https://semver.org/).
 
+## [1.5.0] - 2026-04-26
+
+Lean refactor + intake-driven config. Largest release in the v1.x line. Originally planned as v1.5 + v1.6 combined.
+
+### Added
+
+- **Markdown intake forms** — `documentation/intake/project.md` and `documentation/intake/modules/<n>.md` replace `.docsmithrc.yaml` as primary config. BA-friendly: checkboxes, fillable backtick fields, no YAML syntax.
+- **Layered config** — defaults → project intake → module intake → CLI flags. Higher layers override lower for the same field; sources are cumulative.
+- **`module` command** — manage per-feature module intakes. Sub-commands: `<n>`, `--from`, `list`, `archive`, `unarchive`. Updates project.md modules list automatically.
+- **`fetch` command** — pull external knowledge sources into local cache. Types: Notion, GitHub, Google Drive, URL, local file. Auth via env var references (never plaintext).
+- **`run` command** — orchestrated pipeline that auto-chains stages with configurable pause gate (default `after-draft`). Saves state to `.run-state.yaml`.
+- **`continue` command** — resume `run` from saved state.
+- **`update` command** — detect external source changes via cheap metadata calls (Notion edit time, GitHub commit SHA, GDrive revision, URL ETag, file mtime). Propose targeted draft re-runs.
+- **`intake-help` command** — print field reference for intake forms with validation rules and defaults.
+- **`sources.lock.yaml`** — auto-managed lock file tracking fetched state per source (versions, hashes, cache paths).
+- **External source cache** — `documentation/.cache/sources/` (gitignored) holds fetched content for offline runs.
+- **`intake-reference.md`** — comprehensive reference for intake parsing, layered config resolution, validation, fetch/update workflow.
+- **3 new templates**: `PROJECT_INTAKE_TEMPLATE.md`, `MODULE_INTAKE_TEMPLATE.md`, `SOURCES_LOCK_TEMPLATE.md`.
+
+### Changed
+
+- **`init` command** — scaffolds intake forms instead of writing yaml. New flag `--upgrade-from-1.4` reads existing `.docsmithrc.yaml` and pre-fills `project.md`.
+- **`voice` command** — Quick mode default (1 file: voice-chart.md). `--full` flag opt-in for legacy 3-file output (UX patterns + scorecard).
+- **`translate` command** — Default review mode is now `batch` (whole-file diff) instead of `per-block`. `--per-block` flag for opt-in safer mode.
+- **Default `behavior.on_existing`** — kept as `prompt` (safer for new users). Power users can switch via intake `Auto-run behavior`.
+- **Process flow** — now starts at intake-fill rather than interactive prompts. Stages still individually invokable; `run` chains them.
+- **20 commands** total. v1.4.0 had 21 commands (with overlap). Lean cuts: removed `start`, `validate`, `test`, `tech-review`, `peer-review` as separate commands (merged into others or replaced by intake/run). Added: `module`, `fetch`, `run`, `continue`, `update`, `intake-help`.
+
+### Removed
+
+- **`start` command** — duplicated `init`. Use `init` to scaffold; use `run` to execute pipeline.
+- **`validate` command** — replaced by `walkthrough --check` (already does the same job).
+- **`test` command** — folded into `walkthrough` (test cases auto-built from drafts).
+- **`peer-review` and `tech-review` commands** — these are inherently human steps. Now part of the natural pause-and-review flow between `run` and `continue`. No separate command needed.
+- **`review-plan` command** — removed; review happens inline with `--pause-at after-plan`.
+- **`incorporate` command** — folded into `edit --from-review`.
+- **`sitemap` command** — output of `plan` (combined into one stage).
+- **5 templates removed** as redundant or no longer needed: `MERGE_DECISION_TEMPLATE.md`, `TRANSLATION_DECISIONS_TEMPLATE.md`, `UX_CONTENT_SCORECARD_TEMPLATE.md` (use `voice --full` if needed), `UX_TEXT_PATTERNS_TEMPLATE.md` (use `voice --full`), `TRACEABILITY_MATRIX_TEMPLATE.md` (inlined into documentation-plan), `WALKTHROUGH_TEST_EXECUTION_TEMPLATE.md` (folded into test-case template).
+- **2 reference docs removed**: `subprocess-010a.md` (folded into `process-reference.md`), `update-reference.md` (folded into SKILL.md re-run protocol section).
+
+### Deferred / not in 1.5.0
+
+- **Visual regression** in walkthrough (pixel-diff between captured and previous screenshots): future, no version assigned. Was originally on v1.5 plan but de-prioritized after user feedback that re-run safety + intake matter more.
+- **`migrate` command** for config schema changes: removed from roadmap. Since docsmith has no production users yet, breaking config changes are handled in CHANGELOG migration notes only.
+- **`adopt` command** (convert existing Docusaurus docs into workspace): future. v1.5.0 has `init --upgrade-from-1.4` for migrating from prior docsmith versions, but not for converting existing untracked docs.
+- **`health` command** (one-shot wrapper of verify + drift + compare): future. Use `/docsmith verify` and `/docsmith update` separately for now.
+- **Translation drift tracking** (`translate --check` mode): future. Workaround: re-run `translate` in Update mode.
+- **`<!-- translation-locked -->` markers**: future.
+- **Per-locale image namespacing** for products with localized UI screenshots: future.
+- **Per-doc source provenance tracking** in `update` (which doc uses which source for surgical updates): future. Currently `update` re-evaluates all docs in a module on any source change.
+
+### Migration from 1.4.x
+
+For existing v1.4.x workspaces:
+
+1. Pull v1.5.0
+2. Run `/docsmith init --upgrade-from-1.4` — reads `.docsmithrc.yaml` and pre-fills `documentation/intake/project.md`
+3. Edit `project.md` to fill remaining fields (audience, sources, voice details that weren't in yaml)
+4. Run `/docsmith module <n>` for each feature area (`instances`, `storage`, etc.)
+5. Edit each module file
+6. Run `/docsmith run` to verify everything resolves correctly
+
+Old yaml is read for backward compat but deprecated. v1.6 will remove yaml support.
+
+For NEW projects: just `/docsmith init` directly produces the new structure.
+
+### Why this large release
+
+User feedback during v1.4.0 design: "22 commands too many, intake configuration unfriendly to BAs". Lean refactor addresses both:
+- Commands cut/merged from 21 to 20 (number similar but functional overlap removed)
+- YAML replaced with markdown forms
+- New `run`/`continue`/`update` automate the boring parts
+
+Combined with v1.6's planned translate command (already shipped in v1.4.0), the v1.x line is feature-complete enough for early production trial.
+
 ## [1.4.0] - 2026-04-26
 
 Multi-locale translation lands. Originally planned as v1.6 but promoted because translation gates the "done" definition for any multi-locale project.
