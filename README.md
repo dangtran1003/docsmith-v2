@@ -39,6 +39,10 @@ git clone https://github.com/dangtran1003/docsmith-v2.git .claude/skills/docsmit
 
 See [PUBLISHING.md](PUBLISHING.md) for all installation methods and marketplace publishing.
 
+## How it works
+
+For a complete walkthrough of the skill's operating model — every command, every file, the workspace/target/deploy lifecycle, troubleshooting — read **[HOW_IT_WORKS.md](HOW_IT_WORKS.md)** (or **[HOW_IT_WORKS.vi.md](HOW_IT_WORKS.vi.md)** in Vietnamese).
+
 ## Quick start
 
 ### Standalone (drafting first, deploy later)

@@ -3,6 +3,18 @@
 All notable changes to this skill are documented in this file.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Semantic Versioning](https://semver.org/).
 
+## [1.2.1] - 2026-04-26
+
+### Added
+
+- **`HOW_IT_WORKS.md`**: end-user walkthrough of the skill's operating model — 12 sections covering the two-layer model, command pipeline, init, config, authoring loop, deploy, categorize, locales, mental model, daily cheat-sheet, troubleshooting, and reading list. Read this before using docsmith on a real project.
+- **`HOW_IT_WORKS.vi.md`**: Vietnamese translation of the same document.
+- README "How it works" section linking to both language versions.
+
+### Notes
+
+Patch release — documentation only. No SKILL.md or command logic changes from v1.2.0.
+
 ## [1.2.0] - 2026-04-26
 
 Standalone-first refactor + deploy to host project (Docusaurus preset).

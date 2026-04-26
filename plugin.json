@@ -1,6 +1,6 @@
 {
   "name": "dangtran1003/docsmith-v2",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "Standalone documentation workspace + deploy to host project (Docusaurus preset). Audience analysis, planning, UX content standards, drafting, walkthrough verification, tutorial video recording, locale-aware folder structure, deploy with frontmatter injection and image namespacing.",
   "author": "dangtran1003",
   "license": "MIT",
