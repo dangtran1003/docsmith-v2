@@ -42,6 +42,8 @@ mappings:
       - rewrite_video_refs
       - escape_mdx_specials
     only_when: locale != locales.source
+    # 1.4.0+: these drafts come from `translate` command, not authored directly.
+    # Empty target folders mean translation hasn't run yet — deploy warns.
 
   # Images
   - source: documentation/images/**/*.{png,jpg,jpeg,gif,svg,webp}

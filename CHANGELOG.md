@@ -3,6 +3,62 @@
 All notable changes to this skill are documented in this file.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Semantic Versioning](https://semver.org/).
 
+## [1.4.0] - 2026-04-26
+
+Multi-locale translation lands. Originally planned as v1.6 but promoted because translation gates the "done" definition for any multi-locale project.
+
+### Added
+
+- **`translate` command** — AI translation from `locales.source` to each entry in `locales.targets`. Per-block review gate by default; `--auto-approve` flag for speed. See [translate-reference.md](translate-reference.md).
+- **Per-block review gate** — for each translatable block (heading, paragraph, list, table cell, alt text, link text, frontmatter title), AI proposes translation. User decides: `y` approve / `e` edit / `s` skip (keep source) / `n` remove / `a` approve all remaining / `q` quit.
+- **Glossary support** — optional per-locale `documentation/standards/glossary.<locale>.yaml` with longest-match-wins lookup, case sensitivity, context disambiguation, UI label preservation. Built iteratively from per-block review corrections. See [templates/GLOSSARY_TEMPLATE.yaml](templates/GLOSSARY_TEMPLATE.yaml).
+- **Translation metadata** in frontmatter — `translated_from`, `translated_at`, `source_hash`, `glossary_version`, `translation_status`. Forward-compatible with v1.6.x drift tracking.
+- **Block-level preserve rules** — code blocks, inline code, file paths, URLs, frontmatter `id`/`slug`, image src paths, video markers, MDX component tags are NEVER translated.
+- **Re-run protocol integration** — translate honors the 4-option gate. Update mode preserves manually-edited translations when source unchanged; only proposes changes for modified/new/removed source blocks.
+- **Translation completeness check in `deploy`** — when `locales.targets` non-empty, deploy verifies each target has translated drafts for all source files. Missing translations emit a warning per locale.
+- **`--locale <locale>` flag** for `translate` and `walkthrough` — scope to single target locale.
+- **Process Flow update** — `translate` is positioned after `incorporate` and before `categorize`/`deploy`. Required for multi-locale projects; no-op for single-locale.
+- 2 new templates: `GLOSSARY_TEMPLATE.yaml`, `TRANSLATION_DECISIONS_TEMPLATE.md`. New: `translate-reference.md`.
+
+### Changed
+
+- **`init` command** — for each target locale, scaffolds empty `glossary.<locale>.yaml` from template (replaces v1.2.x README placeholders). Target draft folders remain empty for `translate` to populate.
+- **`deploy` command workflow** — adds translation completeness check as step 1 before detection. Warns and lists incomplete locales but does not block.
+- **`.docsmithrc.yaml` schema** — added `translate:` block (`enabled`, `glossary_required`, `default_review_mode`, `preserve_frontmatter_fields`, `translate_frontmatter_fields`, `warn_on_deploy_if_incomplete`).
+- **Docusaurus preset** — comment clarifies non-source-locale drafts come from `translate` command, not direct authoring.
+- **File Organization** — `glossary.<locale>.yaml` listed under `standards/`; target locale draft folders contain real `.md` files (not README placeholders) once `translate` has run.
+
+### Deferred to future versions
+
+- **Translation drift tracking** (`translate --check` mode listing source-changed sections without prompting): v1.6.x roadmap. Workaround: re-run `translate` in Update mode.
+- **`<!-- translation-locked -->` markers** for protecting blocks from re-translation: v1.6.x roadmap.
+- **Per-locale image namespacing** for products with localized UI screenshots: v1.5+ roadmap.
+- **Voice chart per locale** (`voice-chart.<locale>.md`) for tone consistency in translations: v1.5+ roadmap.
+- **Visual regression in walkthrough** (pixel-diff): v1.5+ roadmap.
+- **`migrate` command** for config schema changes: v1.5+ roadmap if schema changes.
+- **`adopt` command** + **`health` command**: v1.5+ roadmap (unchanged).
+
+### Migration from 1.3.x
+
+No breaking changes for single-locale projects. For multi-locale projects:
+
+1. Pull v1.4.0
+2. (Optional) Create `documentation/standards/glossary.<locale>.yaml` from [templates/GLOSSARY_TEMPLATE.yaml](templates/GLOSSARY_TEMPLATE.yaml) for each target locale
+3. Replace v1.2.x README placeholders in target draft folders with actual translations: `/docsmith translate <product>`
+4. Per-block review gate ensures no garbage gets into target drafts
+5. Add `translate` to your CI pipeline if applicable
+6. Future deploys verify translation completeness before applying
+
+If you previously hand-translated files into `drafts/<target-locale>/`, those files are detected by `translate` re-run protocol and treated as existing — Update mode preserves them as KB.
+
+### Roadmap revision
+
+Numbering compressed: what was planned as v1.4 + v1.5 + v1.6 is now redistributed:
+
+- **v1.4.0** (this release): translation (was v1.6)
+- **v1.5.0** (next): visual regression + migrate command + per-locale image namespacing + voice chart per locale (was v1.4 + parts of v1.5)
+- **v1.6.0** (later): translation drift tracking + lock markers + adopt command + health command (deferred items from v1.4 + originals from v1.5/v1.6)
+
 ## [1.3.0] - 2026-04-26
 
 Re-run safety + drift detection + delete propagation. Doc CRUD becomes deterministic.

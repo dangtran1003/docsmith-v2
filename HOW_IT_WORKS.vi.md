@@ -370,34 +370,63 @@ Title normalization (consistent giữa các sibling):
 
 ---
 
-## 8. Locales hiện tại (1.2.0) và tương lai (1.6)
+## 8. Multi-locale translation (1.4.0+)
 
-Chạy được trong 1.2.0:
+Hoạt động được ở 1.4.0:
 
 - Cấu trúc thư mục: `documentation/drafts/<locale>/` cho mỗi locale
-- Deploy map mỗi locale sang đúng path Docusaurus i18n
-- Bạn có thể tự tạo translation trong `drafts/vi/`, `drafts/jp/` và deploy sẽ pick up
+- **Command `translate`** — AI dịch từ source sang từng locale trong `locales.targets`
+- **Per-block review gate** — với mỗi block dịch được, AI propose translation, bạn approve/edit/skip
+- **Glossary** — tuỳ chọn `documentation/standards/glossary.<locale>.yaml` đảm bảo thuật ngữ nhất quán
+- **Check completeness khi `deploy`** — warn khi locale chưa dịch đủ
+- **Re-run an toàn** — Update mode giữ nguyên translation đã edit thủ công nếu source chưa đổi
 
-Chưa có:
-
-- AI auto-translate. Command `translate` ở v1.6 roadmap.
-- Translation drift tracking (khi EN update, biết file VI nào đã stale)
-
-Đến trước v1.6, workflow multi-locale như sau:
+Workflow multi-locale:
 
 ```bash
-# Draft EN
+# 1. Draft ở source locale (en)
 /docsmith draft MyProduct
-# documentation/drafts/en/foo.md được tạo
+/docsmith edit MyProduct
+/docsmith walkthrough MyProduct
+/docsmith record MyProduct                  # optional
+/docsmith verify MyProduct
 
-# Tự tạo translation VI
-cp documentation/drafts/en/foo.md documentation/drafts/vi/foo.md
-# Edit drafts/vi/foo.md thủ công hoặc bằng tool khác
+# 2. Translate sang tất cả target locales
+/docsmith translate MyProduct
+# Với mỗi block, AI propose translation; bạn approve/edit/skip
+# Decisions lưu vào documentation/archive/<ts>/translation-decisions-<locale>.yaml
 
-# Deploy cả hai
+# 3. (Tuỳ chọn) Verify translated drafts trên UI product đã localize
+/docsmith walkthrough MyProduct --locale vi --check
+
+# 4. Deploy tất cả locale cùng lúc
+/docsmith categorize MyProduct
+/docsmith deploy MyProduct --dry-run        # warn nếu locale nào chưa hoàn chỉnh
 /docsmith deploy MyProduct
-# Copy drafts/en/* → docs/, drafts/vi/* → i18n/vi/.../current/
 ```
+
+Chưa hoạt động (defer):
+
+- **Translation drift tracking** khi source update sau khi đã dịch. Workaround: re-run `translate` ở Update mode — so sánh block qua similarity và propose UPDATE chỉ cho block source đổi. `translate --check` first-class ở v1.6.x roadmap.
+- **`<!-- translation-locked -->` markers** để bảo vệ block khỏi re-translation. v1.6.x.
+- **Per-locale image namespacing** cho product có UI screenshots đã localize. v1.5+.
+- **Voice chart per locale** cho consistency tone trong translations. v1.5+.
+
+Định nghĩa "done" cho project multi-locale:
+
+```
+Source drafts complete  ✓
+        ↓
+walkthrough/record done ✓
+        ↓
+incorporate done        ✓
+        ↓
+translate done          ✓  ← bước bắt buộc
+        ↓
+categorize/deploy ready ✓
+```
+
+Skip `translate` đi thẳng `deploy` → site Docusaurus có locale switcher bị gãy (thư mục target rỗng). Deploy v1.4.0 warn rõ khi xảy ra trường hợp này.
 
 ---
 

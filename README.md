@@ -76,6 +76,15 @@ cd my-docusaurus-site
 # ... draft / wt / rec / deploy as above
 ```
 
+## What's new in 1.4.0
+
+- **`translate` command**: AI translation from source locale to each `locales.targets`. Per-block review gate by default; user approves / edits / skips per block. `--auto-approve` flag for speed.
+- **Glossary support**: optional `documentation/standards/glossary.<locale>.yaml` enforces consistent terminology. Build iteratively from review corrections.
+- **Translation metadata**: every translated file tracks `translated_from`, `source_hash`, `glossary_version` for forward-compatible drift tracking (1.6.x).
+- **Translation completeness check in `deploy`**: warns when target locales have missing translations.
+- **Re-run safety extends to translate**: Update mode preserves manually-edited translations when source unchanged.
+- 2 new templates: `GLOSSARY_TEMPLATE.yaml`, `TRANSLATION_DECISIONS_TEMPLATE.md`. New: `translate-reference.md`.
+
 ## What's new in 1.3.0
 
 - **Re-run safety**: every command checks output existence first. 4-option gate (Update / Overwrite / Side-by-side / Cancel) when found. Default `prompt`; configurable.
@@ -117,9 +126,8 @@ See [CHANGELOG.md](CHANGELOG.md) for full history including v1.1.0 (caption rule
 
 ## Roadmap
 
-- **v1.4**: visual regression in walkthrough (pixel-diff), `migrate` command for config schema changes, `generate_sidebars: true` implementation, auto-hide undocumented folders
-- **v1.5**: `adopt` command (convert existing Docusaurus docs into docsmith workspace), `health` command (one-shot wrapper of verify + drift + compare)
-- **v1.6**: `translate` command — AI translation from source locale to target locales
+- **v1.5**: visual regression in walkthrough (pixel-diff), `migrate` command for config schema changes, per-locale image namespacing, voice chart per locale, sidebar generation, auto-hide undocumented folders
+- **v1.6**: translation drift tracking (`translate --check`), `<!-- translation-locked -->` markers, `adopt` command (convert existing Docusaurus docs), `health` command (one-shot wrapper of verify + drift + compare)
 - **Future**: mkdocs preset, mintlify preset
 
 ## License

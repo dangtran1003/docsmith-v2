@@ -13,10 +13,14 @@ product:
 # Languages
 locales:
   source: en                     # Draft language. AI generates docs here.
-  targets: []                    # Translation targets. v1.2.0 scaffolds the
-                                 # folder structure but does not auto-translate.
-                                 # Translation is on the v1.6 roadmap.
+  targets: []                    # Translation targets. v1.4.0+ supports
+                                 # automatic translation via the `translate`
+                                 # command (per-block review by default).
                                  # Examples: [vi, jp], [vi, jp, fr]
+                                 # Each target locale should have an optional
+                                 # glossary file at:
+                                 #   documentation/standards/glossary.<locale>.yaml
+                                 # See templates/GLOSSARY_TEMPLATE.yaml.
 
 # Workspace paths (relative to project root where this file lives)
 paths:
@@ -57,6 +61,30 @@ behavior:
                                  #   auto-apply-high-confidence — skip gate;
                                  #     auto-apply HIGH confidence fixes only
   side_by_side_suffix_style: numbered   # numbered (-v2, -v3) | date (-2026-04-26)
+
+# Translation behavior (1.4.0+, only applies if locales.targets non-empty)
+translate:
+  enabled: true                  # Auto-disabled if locales.targets is empty
+  glossary_required: false       # If true, fail translate when glossary file
+                                 # missing for a target locale.
+  default_review_mode: per-block # per-block | auto-approve
+                                 # per-block   — show source/translation side-by-side
+                                 #               for each block; user approves/edits
+                                 # auto-approve — skip gate; apply AI translation as-is
+                                 #               (less safe, faster, for CI use)
+  preserve_frontmatter_fields:   # Fields NEVER translated even if present
+    - id
+    - slug
+    - sidebar_position
+    - tags
+  translate_frontmatter_fields:  # Fields translated explicitly
+    - title
+    - description
+    - keywords
+  warn_on_deploy_if_incomplete: true
+                                 # If a target locale has fewer translated files
+                                 # than source, deploy emits a warning listing
+                                 # untranslated files. User can proceed or abort.
 
 # Docusaurus-specific options (only applied when preset = docusaurus)
 docusaurus:

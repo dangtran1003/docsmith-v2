@@ -1,6 +1,6 @@
 ---
 name: docsmith
-description: "Create, verify, update, and deploy documentation following the PRC-010 process. Standalone-first workspace; deploys to Docusaurus or other targets via preset. Re-run safe with update/overwrite/side-by-side gate, KB inheritance, drift detection, delete propagation. Use when asked to create, draft, plan, review, update, deploy, or publish documentation. Supports commands: init, start, audience, plan, review-plan, sitemap, voice, draft, edit, walkthrough, record, validate, test, verify, peer-review, tech-review, incorporate, publish, categorize, deploy."
+description: "Create, verify, translate, update, and deploy documentation following the PRC-010 process. Standalone-first workspace; deploys to Docusaurus or other targets via preset. Re-run safe with update/overwrite/side-by-side gate, KB inheritance, drift detection, multi-locale translation with per-block review, delete propagation. Use when asked to create, draft, plan, review, translate, update, deploy, or publish documentation. Supports commands: init, start, audience, plan, review-plan, sitemap, voice, draft, edit, walkthrough, record, validate, test, verify, peer-review, tech-review, incorporate, translate, publish, categorize, deploy."
 ---
 
 # Docsmith — PRC-010: Documentation Creation Process
@@ -31,6 +31,7 @@ Parse `$ARGUMENTS` to determine which command to run. If no command is given or 
 | `peer-review` | `pr`  | Human  | Peer review                                                                                                                               |
 | `tech-review` | `tr`  | Human  | Technical review (optional)                                                                                                               |
 | `incorporate` | `inc` | **AI** | Incorporate review feedback into documents                                                                                                |
+| `translate`   | `tr`  | **AI** | Translate drafts from source locale to each `locales.targets`. Per-block review gate by default; `--auto-approve` for speed.              |
 | `categorize`  | `cat` | **AI** | Generate `_category_.json` files from sitemap; normalize titles; flag undocumented folders (Docusaurus preset)                            |
 | `deploy`      | `dep` | **AI** | Copy/sync workspace into target host project with transforms (frontmatter, image refs, etc.). Supports `--dry-run` and `--target <path>`. |
 | `publish`     | `pub` | Human  | Approve and publish (typically `git commit && push` on the deploy target after `deploy`)                                                  |
@@ -52,6 +53,9 @@ Parse `$ARGUMENTS` to determine which command to run. If no command is given or 
 /docsmith rec MyProduct
 /docsmith verify MyProduct
 /docsmith verify MyProduct documentation/drafts/en/getting-started.md
+/docsmith translate MyProduct                       # translate to all locales.targets, per-block review
+/docsmith translate MyProduct --locale vi           # only Vietnamese
+/docsmith translate MyProduct --auto-approve        # skip review gate (fast, less safe)
 /docsmith categorize MyProduct                  # Docusaurus _category_.json files
 /docsmith deploy MyProduct --dry-run            # preview deploy (always lists orphan target files)
 /docsmith deploy MyProduct                      # apply deploy to default_target
@@ -63,8 +67,10 @@ Parse `$ARGUMENTS` to determine which command to run. If no command is given or 
 ## Process Flow
 
 ```
-init (AI, once) → audience (Human) → plan (AI) → review-plan (Human) → sitemap (AI) → voice (AI) → draft (AI) → edit (AI) → walkthrough (AI) → [record (AI, optional)] → peer-review (Human) → [tech-review (Human, optional)] → incorporate (AI) → [categorize (AI, Docusaurus preset)] → deploy (AI) → publish (Human)
+init (AI, once) → audience (Human) → plan (AI) → review-plan (Human) → sitemap (AI) → voice (AI) → draft (AI) → edit (AI) → walkthrough (AI) → [record (AI, optional)] → peer-review (Human) → [tech-review (Human, optional)] → incorporate (AI) → [translate (AI, required if locales.targets non-empty)] → [categorize (AI, Docusaurus preset)] → deploy (AI) → publish (Human)
 ```
+
+When `locales.targets` is empty (single-locale project), `translate` is a no-op. When non-empty, `translate` MUST run before `deploy`. Deploy with missing translations emits a warning and lists incomplete locales.
 
 **Decision points:**
 
@@ -160,7 +166,7 @@ Display the command reference table above. No other action.
    └── videos/
    deployments/                        # audit trail folder, empty
    ```
-7. For each target locale folder, write a `README.md` explaining: this folder is empty until v1.6 auto-translation; until then, copy from `drafts/<source>/` and translate manually
+7. For each target locale: scaffold an empty `documentation/standards/glossary.<locale>.yaml` from [templates/GLOSSARY_TEMPLATE.yaml](templates/GLOSSARY_TEMPLATE.yaml) with locale-specific header. Glossary is optional but recommended; commands will run without it. The target draft folders (`drafts/<target-locale>/`) are created empty — `translate` populates them later.
 8. Print next-step guidance: usually `/docsmith audience <product>`
 
 **Does NOT**:
@@ -418,6 +424,48 @@ Explain when technical review is needed (multi-system integrations, unfamiliar d
 **Requires**: Review feedback
 Read [process-reference.md](process-reference.md) § STEP-010. Process feedback one reviewer at a time, prioritize what helps the user most for contradictions.
 
+### `translate` (AI) — Multi-locale translation
+
+**Requires**: Drafts in source locale ready for review/translation. `locales.targets` non-empty.
+
+**When**: Position is after `incorporate` and before `categorize`/`deploy`. For multi-locale projects, **translate is required** — deploy without complete translations emits a warning per missing locale.
+
+Read [translate-reference.md](translate-reference.md) for full block-level rules, glossary integration, and review gate behavior.
+
+**High-level workflow**:
+
+1. Read `.docsmithrc.yaml` to determine source and target locales
+2. Load glossary per target locale from `documentation/standards/glossary.<locale>.yaml` if present (see [templates/GLOSSARY_TEMPLATE.yaml](templates/GLOSSARY_TEMPLATE.yaml))
+3. For each target locale, for each source draft:
+   - Re-run protocol check on target file (Update/Overwrite/Side-by-side/Cancel gate if exists)
+   - Block-parse source (frontmatter, headings, prose, lists, tables, code blocks, image refs, video markers, links)
+   - For each translatable block: apply glossary, generate AI translation, present per-block review gate
+   - User decides per block: `y` approve / `e` edit / `s` skip (keep source) / `n` remove / `a` approve all remaining / `q` quit
+   - Reassemble translated file with translation metadata in frontmatter
+   - Write to `documentation/drafts/<target-locale>/<path>.md`
+4. Save decisions → `documentation/archive/<timestamp>/translation-decisions-<locale>.yaml` (see [templates/TRANSLATION_DECISIONS_TEMPLATE.md](templates/TRANSLATION_DECISIONS_TEMPLATE.md))
+
+**Preserve verbatim** (NEVER translated): code blocks, inline code, file paths, URLs, frontmatter `id`/`slug`, image src paths, video markers, MDX component tags, identifier references in prose.
+
+**Translate**: headings, prose paragraphs, list items, table cells, image alt text, link text, frontmatter `title`/`description`/`keywords`, MDX component title attributes.
+
+**Glossary** is the strongest signal — overrides AI's natural translation. Build iteratively: start without, add terms as you correct AI mistakes during per-block review.
+
+**Flags**:
+- `--locale <locale>` — translate only one target locale (default: all configured)
+- `--auto-approve` — skip per-block review gate, apply AI translations directly. Marks files `translation_status: auto-approved`. Use for CI / glossary-confident bulk runs only.
+- `--glob <pattern>` — translate only matching source files (e.g., `instances/*`)
+
+**Re-run safety** (Update mode): when target file exists, AI compares source blocks against target via similarity matching. Unchanged source blocks → KEEP existing translation (preserve manual edits). Changed source → propose UPDATE with old/new translation side-by-side. Removed source → propose REMOVE. New source → propose NEW.
+
+**Walkthrough on translated docs**: `walkthrough --locale <locale>` runs verification against translated drafts. Requires product UI to be in target locale (most products have a language switcher).
+
+**Limitations** (1.4.0 minimal):
+- No drift tracking when source updates after translation (re-run `translate` in Update mode is the workaround; first-class `--check` mode is on 1.6.x roadmap)
+- Per-locale image namespacing not first-class (1.5+)
+- Voice chart authored in source locale only — translated docs may have tone drift
+- LLM cost: each block is one call. Use Update mode for incremental change.
+
 ### `categorize` (AI) — Docusaurus categories
 
 **Requires**: `deploy.preset = docusaurus`, sitemap, drafts ready
@@ -452,18 +500,19 @@ Copy/sync workspace artifacts into the configured host project with transforms (
 
 **High-level workflow**:
 
-1. **Detect** target project context (CLAUDE.md, docusaurus.config.*, folder signals). See [deploy-reference.md](deploy-reference.md) § "Detection phase". On first deploy to a target, REQUIRE human confirmation of detected config.
-2. **Plan** the file actions (create / update / skip / conflict / delete-if-sync). See [deploy-reference.md](deploy-reference.md) § "Plan phase".
-3. **Show plan** to user. Always include "Orphan files in target" section listing files in target with no source in workspace. If `--dry-run`, exit here.
-4. **Apply** if no unresolved conflicts:
+1. **Translation completeness check** (1.4.0+): if `locales.targets` is non-empty, verify each target locale has translated drafts for all source files. Missing translations → warn per locale with list of untranslated files. User can proceed (deploy partial), abort, or run `translate` first.
+2. **Detect** target project context (CLAUDE.md, docusaurus.config.*, folder signals). See [deploy-reference.md](deploy-reference.md) § "Detection phase". On first deploy to a target, REQUIRE human confirmation of detected config.
+3. **Plan** the file actions (create / update / skip / conflict / delete-if-sync). See [deploy-reference.md](deploy-reference.md) § "Plan phase".
+4. **Show plan** to user. Always include "Orphan files in target" section listing files in target with no source in workspace. If `--dry-run`, exit here.
+5. **Apply** if no unresolved conflicts:
    - Create `deployments/<timestamp>-<target-name>/` audit folder
    - Execute file actions in order
    - For each markdown file: read → transform (frontmatter, image refs, MDX escape) → write
    - For binaries: copy bytes
    - Generate `_category_.json` files via `categorize` if `generate_categories: true`
    - If `--sync-deletes`: backup orphans to `deployments/<ts>/deleted/`, then delete from target
-5. **Save** manifest (including any deletes), target-config snapshot, diff summary, pre-deploy hashes (for manual rollback)
-6. **Print** summary
+6. **Save** manifest (including any deletes), target-config snapshot, diff summary, pre-deploy hashes (for manual rollback)
+7. **Print** summary
 
 **Path scoping**: validate every target absolute path is inside the configured target root before writing. Reject otherwise. This is the safety net against AI-generated bugs ever writing into unrelated parts of the host project.
 
@@ -505,14 +554,16 @@ Created by `init`. All docsmith commands write here:
 │   │   ├── voice-chart.md
 │   │   ├── ux-text-patterns.md
 │   │   ├── content-scorecard.md
-│   │   └── screenshot-policy.md
+│   │   ├── screenshot-policy.md
+│   │   ├── glossary.vi.yaml             # 1.4.0+ — per-locale translation glossary
+│   │   └── glossary.jp.yaml
 │   ├── drafts/
 │   │   ├── en/                             # Source locale (locales.source)
-│   │   │   └── [doc-name].md
-│   │   ├── vi/                             # Target locales (locales.targets)
-│   │   │   └── README.md                   # Until v1.6 auto-translation
+│   │   │   └── [doc-name].md               # Authored here
+│   │   ├── vi/                             # Target locale (locales.targets)
+│   │   │   └── [doc-name].md               # 1.4.0+ — translated by `translate` command
 │   │   └── jp/
-│   │       └── README.md
+│   │       └── [doc-name].md
 │   ├── walkthrough/
 │   │   ├── test-cases/
 │   │   ├── video-plan/

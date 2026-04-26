@@ -370,34 +370,63 @@ Hiding undocumented folders is a **known limitation** — Docusaurus has no firs
 
 ---
 
-## 8. Locales today (1.2.0) and tomorrow (1.6)
+## 8. Multi-locale translation (1.4.0+)
 
-What works in 1.2.0:
+What works in 1.4.0:
 
 - Folder structure: `documentation/drafts/<locale>/` per locale
-- Deploy maps each locale to the correct Docusaurus i18n path
-- You can manually create translations in `drafts/vi/`, `drafts/jp/` and deploy will pick them up
+- **`translate` command** — AI translates from source to each `locales.targets`
+- **Per-block review gate** — for each translatable block, AI proposes translation, you approve/edit/skip
+- **Glossary** — optional `documentation/standards/glossary.<locale>.yaml` enforces consistent terminology
+- **Translation completeness check in `deploy`** — warns when target locales incomplete
+- **Re-run safe** — Update mode preserves manually-edited translations when source unchanged
 
-What does NOT work yet:
-
-- AI auto-translation. The `translate` command is on the v1.6 roadmap.
-- Translation drift tracking (when EN updates, knowing which VI files are stale)
-
-Until v1.6, multi-locale workflow is:
+Multi-locale workflow:
 
 ```bash
-# Draft EN
+# 1. Draft in source locale (en)
 /docsmith draft MyProduct
-# documentation/drafts/en/foo.md is created
+/docsmith edit MyProduct
+/docsmith walkthrough MyProduct
+/docsmith record MyProduct                  # optional
+/docsmith verify MyProduct
 
-# Manually create VI translation
-cp documentation/drafts/en/foo.md documentation/drafts/vi/foo.md
-# Edit drafts/vi/foo.md by hand or with another tool
+# 2. Translate to all target locales
+/docsmith translate MyProduct
+# For each block, AI proposes translation; you approve/edit/skip
+# Decisions saved to documentation/archive/<ts>/translation-decisions-<locale>.yaml
 
-# Deploy both
+# 3. (Optional) Verify translated drafts against localized product UI
+/docsmith walkthrough MyProduct --locale vi --check
+
+# 4. Deploy all locales together
+/docsmith categorize MyProduct
+/docsmith deploy MyProduct --dry-run        # warns if any locale incomplete
 /docsmith deploy MyProduct
-# Copies drafts/en/* → docs/, drafts/vi/* → i18n/vi/.../current/
 ```
+
+What does NOT work yet (deferred):
+
+- **Translation drift tracking** when source updates after translation. Workaround: re-run `translate` in Update mode — it compares blocks via similarity and proposes UPDATE only for changed source. First-class `translate --check` mode is on v1.6.x roadmap.
+- **`<!-- translation-locked -->` markers** for protecting blocks from re-translation. v1.6.x.
+- **Per-locale image namespacing** for products with localized UI screenshots. v1.5+.
+- **Voice chart per locale** for tone consistency in translations. v1.5+.
+
+The "done" definition for multi-locale projects:
+
+```
+Source drafts complete  ✓
+        ↓
+walkthrough/record done ✓
+        ↓
+incorporate done        ✓
+        ↓
+translate done          ✓  ← required step
+        ↓
+categorize/deploy ready ✓
+```
+
+Skipping `translate` and going straight to `deploy` produces a Docusaurus site with broken locale switcher (target folders empty). v1.4.0 deploys warn explicitly when this would happen.
 
 ---
 
