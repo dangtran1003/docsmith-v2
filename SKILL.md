@@ -94,11 +94,12 @@ A legacy `.docsmithrc.yaml` is still read for backward compat with v1.4.x but de
 
 Every command validates that absolute write paths fall inside one of:
 
-- `documentation/` (workspace)
-- `deploy.target_path` from project intake (or `--target` override)
-- `deployments/` (audit trail)
+- `documentation/` (workspace — includes `documentation/deployments/` audit trail and `documentation/.run-state/` orchestration state)
+- `deploy.target_path` from project intake (or `--target` override) — for `deploy` command only
 
 Writes outside these roots are rejected. This is the core safety guarantee.
+
+**Why deployments lives inside `documentation/`** (changed in v1.5.1): in in-place mode where `deploy.target_path = .`, having a top-level `deployments/` folder would clutter the host project root and risk colliding with user-named folders. Keeping it nested ensures docsmith's footprint at the project root is exactly one folder: `documentation/`.
 
 ## Re-run protocol (safety)
 
@@ -123,17 +124,43 @@ Print the command table above. No other action.
 
 **Purpose**: scaffold a docsmith workspace at the current directory. One-time setup.
 
+**Pre-checks** (1.5.1+):
+
+1. If a `documentation/` folder already exists at the current directory:
+   - Inspect its contents. If it has files NOT matching docsmith's structure (e.g., user-authored docs), STOP and report. Suggest `--force` only after the user moves or backs up content.
+   - If contents match docsmith structure (intake/, plan/, etc.) → re-run protocol gate.
+2. If running in a directory with a `docusaurus.config.{js,ts,mjs}` AND user did NOT specify `--target`:
+   - Suggest in-place mode and confirm with user
+   - If confirmed: set `deploy.target_path = .` in pre-fill
+   - If declined: ask for sibling target path
+3. If running in a directory with a `package.json` AND no `docusaurus.config`:
+   - This is an unrelated Node project. Confirm intent before scaffolding.
+4. If running in a non-empty directory with no recognizable config:
+   - List existing folders/files. Ask user to confirm or move first. Refuse to scaffold next to user content silently.
+
 **Behavior**:
 
-1. Detect host project context: `docusaurus.config.{js,ts,mjs}` present → suggest `docusaurus` preset; otherwise `standalone`
+1. Detect host project context (per pre-checks): `docusaurus.config.{js,ts,mjs}` present → suggest `docusaurus` preset; otherwise `standalone`
 2. Inspect target if Docusaurus: read `<target>/CLAUDE.md`, parse `docusaurus.config` for paths
-3. Create directory structure (see § File organization below)
-4. Pre-fill `project.md` with detected values (product slug from package.json or directory name; deploy target from inspected Docusaurus path; etc.)
-5. Print: "Workspace scaffolded. Edit documentation/intake/project.md, then run `/docsmith module <n>` for each feature area."
+3. Create directory structure (see § File organization below). All paths are inside `documentation/`.
+4. Create or update `.gitignore` (1.5.1+):
+   - If `.gitignore` exists at project root: APPEND a docsmith block (between `# BEGIN docsmith` and `# END docsmith` markers). Don't duplicate entries on re-run.
+   - If no `.gitignore`: create one with the docsmith block.
+   - Entries added:
+     ```
+     # BEGIN docsmith
+     documentation/.cache/
+     documentation/videos/raw/
+     documentation/.run-state/
+     # END docsmith
+     ```
+5. Pre-fill `project.md` with detected values (product slug from package.json or directory name; deploy target from inspected Docusaurus path; etc.)
+6. Print: "Workspace scaffolded. Edit documentation/intake/project.md, then run `/docsmith module <n>` for each feature area."
 
 **Flags**:
 - `--upgrade-from-1.4` — read existing `.docsmithrc.yaml` and pre-fill `project.md` from it; keep yaml for compat (deprecated)
 - `--force` — overwrite existing intake files (requires confirm)
+- `--in-place` — explicitly request in-place mode (skip prompt when in Docusaurus repo)
 
 ### `module` (AI)
 
@@ -189,11 +216,12 @@ After fetch: writes content to `documentation/.cache/sources/<source-id>.{md,dir
 **Workflow**:
 
 1. Validate intakes (see [intake-reference.md](intake-reference.md) § Validation). Stop on critical errors.
-2. Resolve layered config; snapshot to `deployments/<ts>/resolved-config.yaml`.
+2. Resolve layered config; snapshot to `documentation/deployments/<ts>/resolved-config.yaml`.
 3. Call `fetch` internally (uses lock file if recent).
 4. Run pipeline stages in sequence: `audience` → `plan` → `voice` → `draft` → `edit` → `walkthrough` → `record` → `translate`.
 5. Pause at the configured gate (default: `after-draft`).
-6. Save state to `documentation/.run-state.yaml`; print resume instructions.
+6. Save state to `documentation/.run-state/<module>.yaml` (per-module, not global — allows multiple modules to be in different stages simultaneously). For multi-module runs, each module gets its own state file.
+7. Print resume instructions.
 
 **Flags**:
 - `[<module>]` — single module instead of all
@@ -204,7 +232,12 @@ After fetch: writes content to `documentation/.cache/sources/<source-id>.{md,dir
 
 ### `continue` (AI)
 
-Resume from `.run-state.yaml`. If state stale (>7 days) or workspace modified outside docsmith, warn before resuming.
+Resume from `documentation/.run-state/<module>.yaml`.
+
+- `/docsmith continue` (no args): if exactly one module has paused state, resume it. If multiple, list them and ask which to resume. If none, error.
+- `/docsmith continue <module>`: resume specific module's state.
+
+If state stale (>7 days) or workspace modified outside docsmith since last `run`, warn before resuming.
 
 ### `audience` / `plan` / `voice` / `draft` / `edit`
 
@@ -340,7 +373,7 @@ Copy/sync workspace to host project with transforms (frontmatter injection, imag
 2. Detect target context (CLAUDE.md, docusaurus.config.*, folder signals)
 3. Plan file actions (create / update / skip / conflict / delete-if-sync)
 4. Show plan; if `--dry-run`, exit
-5. Apply if no unresolved conflicts; create audit folder under `deployments/`
+5. Apply if no unresolved conflicts; create audit folder under `documentation/deployments/`
 6. Save manifest, target-config snapshot, diff, pre-deploy hashes
 
 ### `publish` (Human)
@@ -357,55 +390,72 @@ AI does NOT auto-commit. Git on target is the safety net.
 
 ## File organization
 
+docsmith's footprint at the project root is **exactly one folder: `documentation/`**. Everything else lives inside it.
+
 ```
 <project-root>/
-├── documentation/
-│   ├── intake/
-│   │   ├── project.md                  # Layer 1
-│   │   ├── modules/
-│   │   │   ├── instances.md            # Layer 2
-│   │   │   └── storage.md
-│   │   └── sources.lock.yaml           # Auto-managed
-│   ├── plan/
-│   │   ├── audience-profile.md
-│   │   ├── documentation-plan.md
-│   │   └── sitemap.md
-│   ├── standards/
-│   │   ├── voice-chart.md
-│   │   ├── screenshot-policy.md
-│   │   ├── glossary.vi.yaml            # Optional, per locale
-│   │   └── glossary.jp.yaml
-│   ├── drafts/
-│   │   ├── en/                         # Source locale
-│   │   │   └── instances/create.md
-│   │   └── vi/                         # Translated by `translate`
-│   │       └── instances/create.md
-│   ├── walkthrough/
-│   │   ├── test-cases/
-│   │   ├── video-plan/
-│   │   ├── executions/
-│   │   ├── drift/<ts>/
-│   │   └── active-product-bugs.yaml
-│   ├── archive/<ts>/                   # Re-run protocol backups
-│   ├── images/
-│   │   └── instances/create-form-filled.png
-│   ├── videos/
-│   │   ├── raw/                        # Gitignored
-│   │   └── instance-create-tour.mp4
-│   ├── .cache/
-│   │   └── sources/                    # Gitignored
-│   │       ├── notion-abc123.md
-│   │       └── github-mycloud-cloud-arch/
-│   └── .run-state.yaml                 # Run/continue state
-└── deployments/<ts>-<target>/
-    ├── manifest.yaml
-    ├── target-config.yaml
-    ├── diff.md
-    ├── resolved-config.yaml
-    ├── pre-deploy-state.txt
-    └── deleted/                        # Backup of removed target files (--sync-deletes)
+└── documentation/
+    ├── intake/
+    │   ├── project.md                  # Layer 1
+    │   ├── modules/
+    │   │   ├── instances.md            # Layer 2
+    │   │   └── storage.md
+    │   └── sources.lock.yaml           # Auto-managed
+    ├── plan/
+    │   ├── audience-profile.md
+    │   ├── documentation-plan.md
+    │   └── sitemap.md
+    ├── standards/
+    │   ├── voice-chart.md
+    │   ├── screenshot-policy.md
+    │   ├── glossary.vi.yaml            # Optional, per locale (path is fixed: documentation/standards/glossary.<locale>.yaml)
+    │   └── glossary.jp.yaml
+    ├── drafts/
+    │   ├── en/                         # Source locale
+    │   │   ├── instances/              # = module.folder (default = module.slug)
+    │   │   │   ├── create.md
+    │   │   │   ├── list.md
+    │   │   │   └── auto-scaling.md     # Multiple docs per module
+    │   │   └── storage/
+    │   │       └── overview.md
+    │   └── vi/                         # Translated by `translate`, mirrors EN structure
+    │       └── instances/
+    │           └── create.md
+    ├── walkthrough/
+    │   ├── test-cases/
+    │   ├── video-plan/
+    │   ├── executions/
+    │   ├── drift/<ts>/
+    │   └── active-product-bugs.yaml
+    ├── archive/<ts>/                   # Re-run protocol backups
+    ├── images/
+    │   └── instances/                  # = module.folder
+    │       └── create-form-filled.png
+    ├── videos/
+    │   ├── raw/                        # Gitignored
+    │   └── instance-create-tour.mp4
+    ├── deployments/                    # Audit trail (1.5.1+: moved INSIDE documentation/)
+    │   └── <ts>-<target>/
+    │       ├── manifest.yaml
+    │       ├── target-config.yaml
+    │       ├── diff.md
+    │       ├── resolved-config.yaml
+    │       ├── pre-deploy-state.txt
+    │       └── deleted/                # Backup of removed target files (--sync-deletes)
+    ├── .cache/
+    │   └── sources/                    # Gitignored
+    │       ├── notion-abc123.md
+    │       └── github-mycloud-cloud-arch/
+    └── .run-state/                     # 1.5.1+: per-module orchestration state
+        ├── instances.yaml              # Run state for `instances` module
+        └── storage.yaml                # Run state for `storage` module
 ```
 
-Standalone preset: workspace IS the publishable artifact, no target.
+### Path rules
 
-In-place mode: `deploy.target_path = .` works inside the same project as workspace.
+- **`<feature>` = `module.folder`** (which defaults to `module.slug`). For module `instances` with default folder, drafts go in `drafts/en/instances/`, images in `images/instances/`, target in `<deploy_target>/docs/instances/`.
+- **Multiple docs per module** are normal: tutorial, how-to, reference, concept docs all live under the same module folder. The `Features to document` section in module intake drives how many.
+- **Glossary path is fixed**: `documentation/standards/glossary.<locale>.yaml`. Not configurable in v1.5.x. AI looks for it at exactly this path.
+- **In-place mode** (`deploy.target_path = .`): workspace `documentation/` and target `docs/`/`i18n/`/`static/` are siblings inside the Docusaurus repo. Both managed by docsmith but only `documentation/` is fully owned.
+
+Standalone preset: workspace IS the publishable artifact, no target.

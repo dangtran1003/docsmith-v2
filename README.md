@@ -43,6 +43,8 @@ See [PUBLISHING.md](PUBLISHING.md) for all installation methods and marketplace 
 
 For a complete walkthrough of the skill's operating model — every command, every file, the workspace/target/deploy lifecycle, troubleshooting — read **[HOW_IT_WORKS.md](HOW_IT_WORKS.md)** (or **[HOW_IT_WORKS.vi.md](HOW_IT_WORKS.vi.md)** in Vietnamese).
 
+**For BAs and content owners** filling out intake forms (no technical background needed): read **[INTAKE_GUIDE.md](INTAKE_GUIDE.md)** (or **[INTAKE_GUIDE.vi.md](INTAKE_GUIDE.vi.md)**).
+
 ## Quick start
 
 ### Standalone (drafting first, deploy later)

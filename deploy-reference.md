@@ -49,7 +49,7 @@ Order of precedence (highest first):
 
 After detection, show **detected target config** to user for confirmation
 before doing any writes. This is non-skippable on first deploy to a target.
-Subsequent deploys cache detection in `deployments/<timestamp>/target-config.yaml`.
+Subsequent deploys cache detection in `documentation/deployments/<timestamp>/target-config.yaml`.
 
 ## Plan phase
 
@@ -173,7 +173,7 @@ Use --apply to execute, or --force to override conflicts.
 
 Only runs without `--dry-run` AND with no unresolved conflicts.
 
-1. Create `deployments/<timestamp>-<target-name>/` audit folder
+1. Create `documentation/deployments/<timestamp>-<target-name>/` audit folder
 2. Write `manifest.yaml` with planned actions
 3. Execute each action in order:
    - Markdown: read source → apply transforms → write target
@@ -185,10 +185,10 @@ Only runs without `--dry-run` AND with no unresolved conflicts.
 
 ## Audit trail
 
-Every deploy creates `deployments/<timestamp>-<target>/`:
+Every deploy creates `documentation/deployments/<timestamp>-<target>/`:
 
 ```
-deployments/2026-04-26-103044-mycloud-docusaurus/
+documentation/deployments/2026-04-26-103044-mycloud-docusaurus/
 ├── manifest.yaml          # planned + actual actions
 ├── target-config.yaml     # detected target config
 ├── diff.md                # human-readable summary

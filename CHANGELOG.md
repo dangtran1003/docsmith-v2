@@ -3,6 +3,44 @@
 All notable changes to this skill are documented in this file.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Semantic Versioning](https://semver.org/).
 
+## [1.5.1] - 2026-04-26
+
+Patch release — bug fixes for path conflicts + comprehensive intake usage guide. No new commands or breaking changes.
+
+### Fixed
+
+- **Issue 1: `<feature>` path ambiguity resolved.** Drafts go to `documentation/drafts/<source-locale>/<module.folder>/<doc>.md`. `<module.folder>` defaults to `module.slug`. Documented explicitly in SKILL.md § "Path rules" and intake-reference.md § "Path mapping".
+- **Issue 2: in-place mode collision detection.** `init` now pre-checks for existing `documentation/` content, recognizes when running inside a Docusaurus repo (suggests in-place mode), refuses to scaffold silently next to user content. New `--in-place` flag for explicit opt-in.
+- **Issue 3: re-run protocol on `module` create.** Already worked, but now documented explicitly in SKILL.md and INTAKE_GUIDE.
+- **Issue 4: per-module run state.** `documentation/.run-state/<module>.yaml` (one file per module) replaces single `documentation/.run-state.yaml`. Fixes loss of state when running multiple modules sequentially through different pause gates.
+- **Issue 5: deployments folder moved inside workspace.** `documentation/deployments/` instead of root-level `deployments/`. docsmith's footprint at the project root is now exactly one folder: `documentation/`. Reduces collision risk in in-place mode.
+- **Issue 6: glossary path explicit in intake.** Project intake template now has a § Languages > Glossary files subsection clarifying that AI looks for `documentation/standards/glossary.<locale>.yaml` at a fixed path. Auto-created (empty) by `init` when target languages are set.
+- **`.gitignore` smart append.** `init` no longer overwrites existing `.gitignore`. It appends a `# BEGIN docsmith ... # END docsmith` block, idempotent on re-run.
+
+### Added
+
+- **`INTAKE_GUIDE.md` and `INTAKE_GUIDE.vi.md`** — comprehensive practical guide for BAs filling intake forms. Covers: what each section means, how AI uses each field, common patterns (single-feature, in-place, multilingual, Notion sources, post-UI-change updates, source-change updates), error recovery.
+- **README link** to INTAKE_GUIDE in How it works section.
+
+### Changed
+
+- **File organization in SKILL.md** updated to reflect new paths (`documentation/deployments/`, per-module `.run-state/<module>.yaml`).
+- **Path scoping rules** updated: writes only inside `documentation/` (workspace, includes deployments + run-state) and `deploy.target_path` (deploy command only).
+- **`init` behavior** documented with pre-checks and `--in-place` flag.
+- **Project intake template** § Languages now has glossary path note + glossary_required option.
+
+### Migration from 1.5.0
+
+Existing v1.5.0 workspaces (if any beta users):
+
+1. Move `deployments/` (root level) into `documentation/deployments/`: `mv deployments documentation/deployments`
+2. Move `.run-state.yaml` into per-module files: `mkdir documentation/.run-state && mv documentation/.run-state.yaml documentation/.run-state/<module>.yaml` (rename per the module the state was for)
+3. Update `.gitignore`: replace any standalone `documentation/.run-state.yaml` entry with `documentation/.run-state/`
+
+Or simpler: fresh `init` if you don't have unsaved progress.
+
+For v1.4.x users following `--upgrade-from-1.4`: the upgrade automatically applies the new layout.
+
 ## [1.5.0] - 2026-04-26
 
 Lean refactor + intake-driven config. Largest release in the v1.x line. Originally planned as v1.5 + v1.6 combined.
