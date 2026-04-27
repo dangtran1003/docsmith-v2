@@ -65,6 +65,27 @@ Target languages (translate to — leave all unchecked for single-locale):
 - [ ] Japanese (jp)
 - [ ] Other: ``
 
+### Glossary files (auto-discovered, no need to fill)
+
+<!--
+  For each target language, AI looks for a glossary file at this fixed path:
+    documentation/standards/glossary.<locale>.yaml
+
+  Example: target language = vi → AI reads documentation/standards/glossary.vi.yaml
+
+  These are AUTO-CREATED by `init` (empty templates) when you specify target
+  languages above. You don't need to set anything here. To enforce specific
+  terms, edit the glossary file directly.
+
+  See templates/GLOSSARY_TEMPLATE.yaml for format.
+-->
+
+Glossary location (informational, not editable): `documentation/standards/glossary.<locale>.yaml`
+
+Glossary required for translation:
+- [ ] No, run translation even without glossary (default — AI uses general knowledge)
+- [ ] Yes, fail translate if glossary missing for a target language
+
 ## 4. Deploy (*)
 
 Preset:

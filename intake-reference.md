@@ -132,7 +132,40 @@ resolved:          deploy.preset = docusaurus
 
 ### Resolved config snapshot
 
-For audit, AI writes the resolved config to `deployments/<ts>/resolved-config.yaml` on every `run`. This lets you reconstruct what AI saw when generating any output.
+For audit, AI writes the resolved config to `documentation/deployments/<ts>/resolved-config.yaml` on every `run`. This lets you reconstruct what AI saw when generating any output.
+
+### Path mapping: how module fields become folder paths
+
+When `module.folder = instances` (defaulting from `module.slug = instances`), this single value drives multiple paths:
+
+| Artifact                  | Path                                                                |
+| ------------------------- | ------------------------------------------------------------------- |
+| Module intake             | `documentation/intake/modules/instances.md`                         |
+| Source-locale drafts      | `documentation/drafts/<source-locale>/instances/<doc>.md`           |
+| Translated drafts         | `documentation/drafts/<target-locale>/instances/<doc>.md`           |
+| Screenshot folder         | `documentation/images/instances/<asset>.png`                        |
+| Test cases                | `documentation/walkthrough/test-cases/instances/<test>.md`          |
+| Drift reports             | `documentation/walkthrough/drift/<ts>/instances-*.md`               |
+| Run state                 | `documentation/.run-state/instances.yaml`                           |
+| Deploy target (Docusaurus)| `<deploy_target>/docs/instances/<doc>.md`                           |
+| Deploy target images      | `<deploy_target>/static/img/<product.slug>/instances/<asset>.png`   |
+| Deploy target i18n        | `<deploy_target>/i18n/<locale>/.../current/instances/<doc>.md`      |
+
+**Each module produces multiple docs** (tutorial, how-to, reference, concept). The `Features to document` section in module intake drives how many. Example for `instances` module with two features:
+
+- `Create instance` → `tutorial`, `how-to` content types → produces 2 docs
+- `Auto-scaling` → `how-to`, `reference` content types → produces 2 docs
+
+Final draft tree:
+```
+documentation/drafts/en/instances/
+├── create-instance-tutorial.md
+├── create-instance.md          (how-to)
+├── auto-scaling.md             (how-to)
+└── auto-scaling-reference.md
+```
+
+AI names files based on feature + content type, normalizing to kebab-case.
 
 ## 3. Validation (hybrid strictness)
 
@@ -358,7 +391,7 @@ Workflow:
    completed_stages: [audience, plan, voice, draft, edit]
    paused_at: after-draft
    next_stage: walkthrough
-   resolved_config_path: deployments/2026-04-26-153000/resolved-config.yaml
+   resolved_config_path: documentation/deployments/2026-04-26-153000/resolved-config.yaml
    ```
 7. Print resume instructions: `Run /docsmith continue when ready`
 
