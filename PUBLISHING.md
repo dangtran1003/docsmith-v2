@@ -1,107 +1,135 @@
 # Publishing & Installation — dangtran1003/docsmith-v2
 
-## Installation Methods
+This repository is a **Claude Code plugin marketplace** containing the `docsmith` plugin. It follows the official Claude Code plugin format introduced in late 2025.
 
-### 1. Claude Code Plugin (recommended)
+## Repository structure
 
-If published to a marketplace repo:
+```
+docsmith-v2/
+├── .claude-plugin/
+│   ├── marketplace.json          # marketplace catalog (required)
+│   └── plugin.json               # plugin manifest (required)
+├── skills/
+│   └── docsmith/                 # the actual skill content
+│       ├── SKILL.md
+│       ├── deploy-reference.md
+│       ├── intake-reference.md
+│       ├── translate-reference.md
+│       ├── process-reference.md
+│       ├── tools-reference.md
+│       ├── presets/
+│       └── templates/
+└── (top-level docs: README, CHANGELOG, INTAKE_GUIDE, HOW_IT_WORKS, COMPARISON)
+```
+
+When `/plugin marketplace add dangtran1003/docsmith-v2` runs, Claude Code reads `.claude-plugin/marketplace.json` to discover plugins, then installs the `docsmith` plugin which lives at `skills/docsmith/`.
+
+## Installation methods
+
+### 1. Marketplace install (recommended)
 
 ```bash
-# Add marketplace (one-time)
+# In Claude Code:
 /plugin marketplace add dangtran1003/docsmith-v2
-
-# Install
-/plugin install dangtran1003/docsmith-v2
-
-# Update
-/plugin marketplace update
+/plugin install docsmith@dangtran1003-docsmith-v2
 ```
 
-### 2. Direct Git Install
+The `@` syntax: `<plugin-name>@<marketplace-name>`. Marketplace name comes from `.claude-plugin/marketplace.json` `name` field (`dangtran1003-docsmith-v2`).
+
+### 2. Update via marketplace
 
 ```bash
-# Clone into personal skills
-git clone https://github.com/dangtran1003/docsmith-v2.git ~/.claude/skills/docsmith
-
-# Or project-level
-git clone https://github.com/dangtran1003/docsmith-v2.git .claude/skills/docsmith
+/plugin marketplace update dangtran1003-docsmith-v2
 ```
 
-### 3. Add as External Directory
+This pulls latest from GitHub and refreshes plugin metadata. Reinstall plugins to apply updates.
 
-```bash
-# Point Claude Code at the skill directory (live reload)
-claude --add-dir /path/to/docsmith
-```
+### 3. Direct skill install (without marketplace)
 
-### 4. Manual Copy
+If you don't want the marketplace overhead, copy just the skill folder:
 
 ```bash
 # Personal (all projects)
-cp -r docsmith/ ~/.claude/skills/docsmith/
+git clone https://github.com/dangtran1003/docsmith-v2.git /tmp/docsmith-v2
+cp -r /tmp/docsmith-v2/skills/docsmith ~/.claude/skills/docsmith
 
-# Project-level (this repo only)
-cp -r docsmith/ .claude/skills/docsmith/
+# Or symlink (for live updates):
+ln -s /tmp/docsmith-v2/skills/docsmith ~/.claude/skills/docsmith
 ```
-
-## Publishing to a Marketplace
-
-### GitHub Repository Setup
-
-1. Create repo `dangtran1003/docsmith-v2`
-2. Push the skill directory as the repo root:
-
-```
-docsmith/                  ← repo root
-├── SKILL.md               # Main skill (required)
-├── plugin.json            # Plugin manifest
-├── CHANGELOG.md           # Version history
-├── PUBLISHING.md          # This file
-├── process-reference.md   # PRC-010 process
-├── subprocess-010a.md     # PRC-010A subprocess
-├── tools-reference.md     # Browser automation tools
-└── templates/             # All output templates
-```
-
-3. Tag releases with semantic versions:
 
 ```bash
-git tag v1.0.0
-git push origin v1.0.0
+# Project-level (committed to repo)
+mkdir -p .claude/skills
+cp -r /path/to/docsmith-v2/skills/docsmith .claude/skills/
 ```
 
-### Register as a Marketplace
+### 4. External directory (for development)
 
-Others can add your repo as a marketplace source:
+When working on the skill itself:
 
 ```bash
-/plugin marketplace add dangtran1003/docsmith-v2
+claude --add-dir /path/to/docsmith-v2/skills/docsmith
 ```
 
-### Cross-Platform Compatibility (agentskills.io)
+Claude Code will pick up live changes during the session.
 
-The SKILL.md format is compatible with:
-- **Claude Code** — native support via `/docsmith`
-- **OpenAI Codex CLI** — reads SKILL.md
-- **GitHub Copilot (VS Code)** — supports Agent Skills
-- **Cursor** — supports Agent Skills
+## Update commands
 
-Note: Slash commands, argument parsing, and template references are Claude Code-specific. Other tools will use the SKILL.md as context/instructions but won't support `/docsmith start` invocation.
+| Install method | Update command |
+|---|---|
+| Marketplace | `/plugin marketplace update dangtran1003-docsmith-v2` |
+| Direct clone | `cd ~/repos/docsmith-v2 && git pull` |
+| Symlinked | `cd /tmp/docsmith-v2 && git pull` |
+| Manual copy | Recopy from latest clone |
 
-## Scopes
+## Publishing to the official Anthropic marketplace
 
-| Scope | Location | Who Gets It |
-|-------|----------|-------------|
-| **Personal** | `~/.claude/skills/docsmith/` | You, all projects |
-| **Project** | `.claude/skills/docsmith/` | Anyone on this project |
-| **Enterprise** | Managed settings / Cowork | Org-wide distribution |
+If you want the plugin discoverable via the built-in `/plugin Discover` tab:
+
+1. **Claude.ai**: Submit at [claude.ai/settings/plugins/submit](https://claude.ai/settings/plugins/submit)
+2. **Console**: Submit at [platform.claude.com/plugins/submit](https://platform.claude.com/plugins/submit)
+
+Both forms ask for the GitHub repository URL. They review the marketplace.json + skill content before listing.
 
 ## Versioning
 
-- Version lives in `SKILL.md` frontmatter (`version: x.y.z`) and `plugin.json`
+- Version lives in **3 places** that must match:
+  - `.claude-plugin/marketplace.json` → `version` and `plugins[0].version`
+  - `.claude-plugin/plugin.json` → `version`
+  - Git tag (e.g., `v1.5.2`)
 - Changes documented in `CHANGELOG.md`
-- Git tags match versions: `v1.0.0`, `v1.1.0`, etc.
 - Follow [Semantic Versioning](https://semver.org/):
-  - **Patch** (1.0.x): Template fixes, typo corrections, clarifications
-  - **Minor** (1.x.0): New commands, new checks, new templates
-  - **Major** (x.0.0): Breaking changes to command names, file organization, or process flow
+  - **Patch** (1.5.x): bug fixes, doc clarifications, template tweaks
+  - **Minor** (1.x.0): new commands, new templates, new capabilities
+  - **Major** (x.0.0): breaking changes to commands or file structure
+
+## Tagging and pushing a release
+
+```bash
+# After committing changes:
+git tag v1.5.2 -m "Release v1.5.2 — <one-line summary>"
+git push origin main
+git push origin v1.5.2
+```
+
+Marketplaces use the latest tag by default. Users running `/plugin marketplace update` get the new version.
+
+## Cross-platform compatibility
+
+The skill content (`skills/docsmith/`) follows the open Agent Skills format, so it works in:
+
+- **Claude Code** — native, full support including `/docsmith` slash commands
+- **Claude Desktop** — reads SKILL.md, no slash commands
+- **OpenClaw** — same skill folder works (under `~/.openclaw/skills/`)
+- **Cursor** — supports Agent Skills via `.cursor/skills/`
+
+The plugin marketplace format (`.claude-plugin/marketplace.json`) is **Claude Code specific**. Other tools install just the `skills/docsmith/` folder directly.
+
+## Scopes
+
+| Scope        | Location                           | Who gets it                  |
+|--------------|------------------------------------|------------------------------|
+| **Personal** | `~/.claude/skills/docsmith/`       | You, all projects on machine |
+| **Project**  | `.claude/skills/docsmith/`         | Anyone working on this repo  |
+| **Plugin**   | Via `/plugin install`              | Anyone with marketplace      |
+| **Enterprise** | Managed settings / Cowork        | Org-wide distribution        |

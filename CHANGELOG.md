@@ -3,6 +3,66 @@
 All notable changes to this skill are documented in this file.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Semantic Versioning](https://semver.org/).
 
+## [1.5.2] - 2026-04-28
+
+Plugin format compliance — restructure to follow official Claude Code plugin marketplace specification. Required to fix `/plugin marketplace add dangtran1003/docsmith-v2` failing with "Marketplace file not found".
+
+### Changed (BREAKING for direct-clone installs only)
+
+- **Repository restructured** to plugin marketplace layout:
+  ```
+  docsmith-v2/                       (was: skill files at root)
+  ├── .claude-plugin/                ← new
+  │   ├── marketplace.json           ← new (catalog)
+  │   └── plugin.json                ← new (manifest, replaces root plugin.json)
+  ├── skills/
+  │   └── docsmith/                  ← new (skill content moved here)
+  │       ├── SKILL.md
+  │       ├── deploy-reference.md
+  │       ├── intake-reference.md
+  │       ├── translate-reference.md
+  │       ├── process-reference.md
+  │       ├── tools-reference.md
+  │       ├── presets/
+  │       └── templates/
+  └── (top-level docs unchanged: README, CHANGELOG, etc.)
+  ```
+- **Old root `plugin.json` removed** — replaced by `.claude-plugin/plugin.json` with the same purpose. Marketplace integration was broken without this restructure.
+- **Reference docs and templates moved into `skills/docsmith/`** — they're referenced from SKILL.md by relative path, must be siblings.
+
+### Added
+
+- `.claude-plugin/marketplace.json` — marketplace catalog with one plugin entry pointing to `./` (the same repo)
+- `.claude-plugin/plugin.json` — official plugin manifest format
+- README "Update" section showing how to update for each install method
+- PUBLISHING.md rewritten with new install commands using marketplace + alternative manual install paths
+
+### Fixed
+
+- `/plugin marketplace add dangtran1003/docsmith-v2` now works (was failing pre-1.5.2 because no `.claude-plugin/marketplace.json`)
+- Install command syntax corrected: `/plugin install docsmith@dangtran1003-docsmith-v2` (the `@<marketplace-name>` form was missing in v1.5.1 docs)
+
+### Migration
+
+For users who installed v1.5.x via `/plugin marketplace add` (impossible — install was broken until 1.5.2):
+- N/A; v1.5.2 is the first version that actually works as a marketplace plugin.
+
+For users who direct-cloned v1.5.x into `~/.claude/skills/docsmith/`:
+1. Pull latest: `cd ~/.claude/skills/docsmith && git pull`
+2. Reinstall from new path:
+   ```bash
+   rm -rf ~/.claude/skills/docsmith
+   git clone https://github.com/dangtran1003/docsmith-v2.git ~/repos/docsmith-v2
+   ln -s ~/repos/docsmith-v2/skills/docsmith ~/.claude/skills/docsmith
+   ```
+   Or copy: `cp -r ~/repos/docsmith-v2/skills/docsmith ~/.claude/skills/`
+
+For users who didn't install yet: just use `/plugin marketplace add dangtran1003/docsmith-v2` directly.
+
+### Why this is a patch (not minor)
+
+No new commands, no new features, no new templates, no schema changes. Pure restructuring required by the platform. Plugin functionality identical to 1.5.1.
+
 ## [1.5.1] - 2026-04-26
 
 Patch release — bug fixes for path conflicts + comprehensive intake usage guide. No new commands or breaking changes.

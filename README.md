@@ -22,22 +22,45 @@ Guides you through 19 commands covering the full documentation lifecycle:
 
 ```bash
 /plugin marketplace add dangtran1003/docsmith-v2
-/plugin install dangtran1003/docsmith-v2
+/plugin install docsmith@dangtran1003-docsmith-v2
 ```
 
-### As a personal skill
+### As a personal skill (without marketplace)
+
+If you prefer cloning directly:
 
 ```bash
-git clone https://github.com/dangtran1003/docsmith-v2.git ~/.claude/skills/docsmith
+# Clone the whole repo, then symlink/copy the skill folder into your skills dir
+git clone https://github.com/dangtran1003/docsmith-v2.git ~/repos/docsmith-v2
+ln -s ~/repos/docsmith-v2/skills/docsmith ~/.claude/skills/docsmith
+```
+
+Or copy just the skill folder:
+
+```bash
+git clone https://github.com/dangtran1003/docsmith-v2.git /tmp/docsmith-v2
+cp -r /tmp/docsmith-v2/skills/docsmith ~/.claude/skills/docsmith
 ```
 
 ### As a project skill
 
 ```bash
-git clone https://github.com/dangtran1003/docsmith-v2.git .claude/skills/docsmith
+# In your project root
+mkdir -p .claude/skills
+cp -r /path/to/docsmith-v2/skills/docsmith .claude/skills/
 ```
 
 See [PUBLISHING.md](PUBLISHING.md) for all installation methods and marketplace publishing.
+
+## Update
+
+```bash
+# If installed via marketplace
+/plugin marketplace update dangtran1003-docsmith-v2
+
+# If cloned directly
+cd ~/repos/docsmith-v2 && git pull
+```
 
 ## How it works
 
@@ -77,6 +100,17 @@ cd my-docusaurus-site
 /docsmith init --in-place                   # auto-detects, sets default_target = .
 # ... draft / wt / rec / deploy as above
 ```
+
+## What's new in 1.5.2
+
+- **Plugin marketplace compliance**: restructured to follow official Claude Code plugin format. `.claude-plugin/marketplace.json` + `.claude-plugin/plugin.json` at root, skill content in `skills/docsmith/`. `/plugin marketplace add dangtran1003/docsmith-v2` now actually works.
+- **Updated install docs**: correct `/plugin install docsmith@dangtran1003-docsmith-v2` syntax. Update commands for all install methods.
+
+## What's new in 1.5.1
+
+- **Path conflict fixes**: 6 issues found in audit and fixed. Footprint at project root is now exactly 1 folder (`documentation/`). Per-module run state. In-place mode collision detection.
+- **INTAKE_GUIDE for BAs**: comprehensive practical guide (en + vi) explaining how to fill intake forms — what each field means, how AI uses it, common patterns.
+- Smart `.gitignore` append (BEGIN/END markers, idempotent).
 
 ## What's new in 1.5.0
 
@@ -119,21 +153,35 @@ See [CHANGELOG.md](CHANGELOG.md) for full history including v1.1.0 (caption rule
 
 ## File structure
 
+This repo is a Claude Code plugin marketplace containing one plugin (`docsmith`):
+
 ```
-.
-├── SKILL.md                         # Main skill spec — entry point for Claude
-├── plugin.json                      # Plugin manifest
-├── .docsmithrc.example.yaml         # Config schema with comments
-├── presets/
-│   ├── standalone.yaml              # Default preset
-│   └── docusaurus.yaml              # Docusaurus deploy mappings
-├── deploy-reference.md              # Deploy command detailed logic
-├── process-reference.md             # PRC-010 process detail
-├── subprocess-010a.md               # PRC-010A UX content subprocess
-├── tools-reference.md               # Browser automation reference
-├── templates/                       # 13 templates
-└── CHANGELOG.md / PUBLISHING.md / README.md
+docsmith-v2/                           # marketplace repo root
+├── .claude-plugin/
+│   ├── marketplace.json               # marketplace catalog
+│   └── plugin.json                    # plugin manifest
+├── skills/
+│   └── docsmith/                      # the actual skill
+│       ├── SKILL.md                   # main skill spec
+│       ├── .docsmithrc.example.yaml   # legacy config schema (deprecated)
+│       ├── deploy-reference.md
+│       ├── intake-reference.md
+│       ├── translate-reference.md
+│       ├── process-reference.md
+│       ├── tools-reference.md
+│       ├── presets/
+│       │   ├── standalone.yaml
+│       │   └── docusaurus.yaml
+│       └── templates/                 # 14 templates
+├── README.md                          # this file
+├── CHANGELOG.md
+├── PUBLISHING.md
+├── HOW_IT_WORKS.md / .vi.md           # user guides at repo root
+├── INTAKE_GUIDE.md / .vi.md           # BA-friendly intake guide
+└── COMPARISON.md / .vi.md             # v1.1.0 vs v1.5.1 self-review
 ```
+
+When installed via `/plugin marketplace add`, Claude Code picks up `skills/docsmith/SKILL.md` automatically.
 
 ## Roadmap
 
@@ -152,5 +200,5 @@ Priorities will be set by what hurts most when using v1.5 on real projects.
 
 ## License
 
-MIT — see plugin.json.
+MIT — see `.claude-plugin/plugin.json`.
 
