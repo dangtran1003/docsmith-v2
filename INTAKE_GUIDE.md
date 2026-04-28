@@ -193,7 +193,21 @@ For translation:
 - **Batch** (default) = review whole-file diff (faster, default)
 - **Auto-approve** = skip review (only for trusted glossaries)
 
-### 9. Module intake files
+### 9. Sitemap pattern
+
+Determines the navigation structure across all modules. Pick once at project level.
+
+- **Pattern A — Learning path** (default): `Overview → Initial setup → Quick Starts → Tutorials → Reference → Troubleshooting → Glossary`. Best for technical products with conceptual depth.
+- **Pattern B — Task-first**: `Overview → Quick Starts → Guides → Reference → Troubleshooting`. Best for mature products where users come knowing what they want.
+- **Pattern C — Custom**: you define order.
+
+Why this matters: ensures all modules in your project have **consistent navigation**. Without this, module A might have `Quick Starts` while module B has `Guides`, confusing users.
+
+Each module then ticks which sections it includes (in module intake § Sitemap sections). AI follows the project pattern when ordering them and warns when a module is missing a section the pattern includes.
+
+**Display name overrides**: you can rename canonical sections per project (e.g., `Quick Starts` → `Hands-on guides`). Slugs (folder names) stay canonical.
+
+### 10. Module intake files
 
 Auto-managed. Don't edit by hand. The `module` command updates this section when you create/archive modules.
 
@@ -263,6 +277,30 @@ For modules requiring different test accounts than the project default, override
   - `Active` (default) — processed by `/docsmith run`
   - `Paused` — skipped temporarily; kept for later
   - `Archived` — skipped permanently; not deleted from target by `--sync-deletes`
+
+### 7. Sitemap sections (v1.5.4+)
+
+Tick which canonical section types this module includes. The order in which they appear is determined by the project pattern (see project.md § 9).
+
+| Section type | When to tick |
+|---|---|
+| `overview` | Always (auto-required) |
+| `initial-setup` | Module needs specific setup beyond project-level |
+| `quickstarts` | Have short task-focused content (5-10 mins each) |
+| `tutorials` | Have step-by-step learning content with hand-holding |
+| `guides` | Have how-tos that assume context (alternative to quickstarts) |
+| `concepts` | Have non-obvious concepts to explain |
+| `dashboard` | Module has a dashboard or report view |
+| `reference` | Have parameter tables, schema specs |
+| `api-reference` | Module has stable API |
+| `glossary` | Module-specific terms |
+| `troubleshooting` | Common issues for this module |
+
+**Pick `quickstarts` OR `guides`, not both.** They overlap.
+
+**AI suggestions**: when you run `/docsmith plan`, AI checks each module against the project pattern and warns if a module is missing a section the pattern includes. Decide per warning — sometimes a section legitimately doesn't apply.
+
+**Display name overrides**: optional per-module names (e.g., this module's "Quick Starts" displays as "Get started fast" in nav). Override at module level overrides project level overrides default.
 
 ## Common patterns
 

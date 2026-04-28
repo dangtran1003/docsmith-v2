@@ -200,6 +200,8 @@ For each field: name, what it controls, validation rules, default value.
 
 **Purpose**: pull content from external knowledge sources declared in intakes. Manual; usually called automatically by `run` and `update`.
 
+**Prerequisites**: env vars set for any auth-required sources (Notion, private GitHub, GDrive). See [SETUP.md](../../SETUP.md) — section "Environment variables for sources and credentials".
+
 **Flags**:
 - (no args) — fetch all sources for project + all active modules
 - `--module <n>` — only this module
@@ -252,7 +254,10 @@ Specific behaviors:
 
 **`audience`** — output: `documentation/plan/audience-profile.md` from [templates/AUDIENCE_PROFILE_TEMPLATE.md](templates/AUDIENCE_PROFILE_TEMPLATE.md). Uses intake `Audience` section.
 
-**`plan`** — outputs: `documentation/plan/documentation-plan.md` (from [templates/DOCUMENTATION_PLAN_TEMPLATE.md](templates/DOCUMENTATION_PLAN_TEMPLATE.md)) AND `documentation/plan/sitemap.md`. Uses intake `Scope` (from each module).
+**`plan`** — outputs: `documentation/plan/documentation-plan.md` (from [templates/DOCUMENTATION_PLAN_TEMPLATE.md](templates/DOCUMENTATION_PLAN_TEMPLATE.md)) AND `documentation/plan/sitemap.md`. Uses intake `Scope` (from each module). Sitemap follows the project pattern (Pattern A/B/C from project intake § Sitemap pattern) and the per-module section selection. AI warns when a module is missing a section the project pattern includes, but doesn't auto-fix. See [templates/SITEMAP_PATTERNS_TEMPLATE.md](templates/SITEMAP_PATTERNS_TEMPLATE.md) for canonical section types and patterns.
+
+Flags:
+- `--migrate-sitemap` — for v1.5.3-or-earlier workspaces: AI proposes a pattern, asks to confirm, and updates project + module intakes to use the new sitemap system.
 
 **`voice`** — outputs: `documentation/standards/voice-chart.md` from [templates/VOICE_CHART_TEMPLATE.md](templates/VOICE_CHART_TEMPLATE.md). With `--full`, also generates UX text patterns and content scorecard (these were standard in v1.4.x; now opt-in for lean default).
 
@@ -261,6 +266,8 @@ Specific behaviors:
 **`edit`** — five passes: voice match, UX patterns, clarity, accuracy markers, link/cross-ref. With `--from-review <file>`, applies a reviewer's feedback file (Markdown with `// FEEDBACK:` annotations or block comments).
 
 ### `walkthrough` (AI)
+
+**Prerequisites**: browser automation tool (Claude in Chrome extension OR Playwright MCP) AND test account credentials set as env vars. See [SETUP.md](../../SETUP.md) — section "Path 1: Claude in Chrome" or "Path 2: Playwright MCP".
 
 Three-phase pipeline:
 
@@ -288,6 +295,8 @@ Drift report format: [templates/DRIFT_REPORT_TEMPLATE.md](templates/DRIFT_REPORT
 Items marked `product-bug` tracked in `walkthrough/active-product-bugs.yaml` across runs; auto-resolved when UI matches doc.
 
 ### `record` (AI)
+
+**Prerequisites**: same as `walkthrough` PLUS ffmpeg installed for video encoding. See [SETUP.md](../../SETUP.md) — section "Path 3: For `record` (tutorial videos)".
 
 Optional. Scans drafts for `<!-- VIDEO ... -->` markers and records short tutorial videos via browser screen recording. See [templates/VIDEO_MARKER_TEMPLATE.md](templates/VIDEO_MARKER_TEMPLATE.md) for marker syntax and [templates/WALKTHROUGH_VIDEO_PLAN_TEMPLATE.md](templates/WALKTHROUGH_VIDEO_PLAN_TEMPLATE.md) for capture plan.
 
@@ -322,7 +331,7 @@ Glossary file (per locale): `documentation/standards/glossary.<locale>.yaml` ([t
 7. Links resolve (internal)
 8. Cross-references valid
 9. Sitemap entries match draft files
-10. No orphan test cases
+10. Sitemap consistency: all modules use the project pattern; warns when module is missing a section the project pattern includes (non-blocking)
 
 **Flags**:
 - `[<doc-glob>]` — scope to specific docs (faster iteration)
@@ -353,9 +362,13 @@ See [intake-reference.md](intake-reference.md) § "The `update` command — chan
 
 Generate `_category_.json` from sitemap. Normalize titles (acronyms uppercase: API, CLI, JSON, etc.; articles lowercase mid-title; first/last word capitalized).
 
+Sidebar position is computed from the sitemap pattern: section types appear in the project pattern's defined order (Pattern A/B/C from project intake). Within a section, individual docs are ordered per the sitemap entries (typically by feature priority).
+
+Display labels respect project intake `Section display names` overrides. Slugs (folder names) stay canonical.
+
 Auto-runs on `deploy` if `generate_categories: true` (Docusaurus preset default). Can run standalone for re-categorization.
 
-See [deploy-reference.md](deploy-reference.md) § "Categorize subcommand" and [templates/CATEGORY_FILE_TEMPLATE.md](templates/CATEGORY_FILE_TEMPLATE.md).
+See [deploy-reference.md](deploy-reference.md) § "Categorize subcommand", [templates/CATEGORY_FILE_TEMPLATE.md](templates/CATEGORY_FILE_TEMPLATE.md), and [templates/SITEMAP_PATTERNS_TEMPLATE.md](templates/SITEMAP_PATTERNS_TEMPLATE.md) for section ordering.
 
 ### `deploy` (AI)
 

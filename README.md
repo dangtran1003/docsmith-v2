@@ -66,40 +66,83 @@ cd ~/repos/docsmith-v2 && git pull
 
 For a complete walkthrough of the skill's operating model — every command, every file, the workspace/target/deploy lifecycle, troubleshooting — read **[HOW_IT_WORKS.md](HOW_IT_WORKS.md)** (or **[HOW_IT_WORKS.vi.md](HOW_IT_WORKS.vi.md)** in Vietnamese).
 
+**Before your first `walkthrough` or `record` run**: read **[SETUP.md](SETUP.md)** (or **[SETUP.vi.md](SETUP.vi.md)**) to install the browser extension, set env vars, and configure credentials.
+
 **For BAs and content owners** filling out intake forms (no technical background needed): read **[INTAKE_GUIDE.md](INTAKE_GUIDE.md)** (or **[INTAKE_GUIDE.vi.md](INTAKE_GUIDE.vi.md)**).
 
 ## Quick start
 
-### Standalone (drafting first, deploy later)
+### 1. One-time setup (per machine)
+
+Read **[SETUP.md](SETUP.md)** to install browser tools and set credentials env vars. Skip if you only need drafting/translating without product verification.
+
+### 2. Initialize project
 
 ```bash
 mkdir my-product-docs && cd my-product-docs
-/docsmith init                              # interactive: slug, locales, preset
-/docsmith audience MyProduct                # define audience
-/docsmith plan MyProduct                    # AI generates plan
-# ... iterate plan / sitemap / voice
-/docsmith draft MyProduct                   # writes to documentation/drafts/en/
-/docsmith wt MyProduct                      # capture screenshots
-/docsmith rec MyProduct                     # (optional) record videos
-/docsmith verify MyProduct
+/docsmith init                              # scaffolds documentation/intake/project.md
 ```
 
-### Deploy to Docusaurus
+### 3. Add modules (per feature area)
 
 ```bash
-# In .docsmithrc.yaml: set deploy.preset = docusaurus and deploy.default_target
-/docsmith deploy MyProduct --dry-run        # preview: detect target, plan, show diff
-/docsmith deploy MyProduct                  # apply
-cd ../my-docusaurus-site && git diff && git commit
+/docsmith module instances                  # creates documentation/intake/modules/instances.md
+/docsmith module storage
+```
+
+### 4. Fill the intake forms
+
+Edit `documentation/intake/project.md` (project-wide settings: product, audience, locales, deploy, voice, sources) and each `documentation/intake/modules/<name>.md` (per-module scope). See [INTAKE_GUIDE.md](INTAKE_GUIDE.md) for what each field means.
+
+### 5. Run the pipeline
+
+```bash
+/docsmith run                               # auto-chains: audience → plan → voice → draft → edit
+                                            # → walkthrough → [record] → translate
+                                            # pauses at after-draft (default) for your review
+# Review drafts in documentation/drafts/<locale>/<module>/
+/docsmith continue                          # resume to deploy plan
+```
+
+### 6. Deploy
+
+```bash
+/docsmith deploy --dry-run                  # preview
+/docsmith deploy                            # apply
+cd ../my-docusaurus-site && git add . && git commit && git push
+```
+
+### Update flow (when sources change)
+
+```bash
+/docsmith update                            # detects Notion/GitHub/GDrive changes
+                                            # proposes targeted re-drafts
 ```
 
 ### In-place inside an existing Docusaurus project
 
 ```bash
-cd my-docusaurus-site
-/docsmith init --in-place                   # auto-detects, sets default_target = .
-# ... draft / wt / rec / deploy as above
+cd ~/my-docusaurus-site
+/docsmith init --in-place                   # detects docusaurus.config and uses target_path = .
+/docsmith module pricing
+# fill intakes
+/docsmith run pricing
+/docsmith deploy
 ```
+
+## What's new in 1.5.4
+
+- **Sitemap consistency**: 3 project-level patterns (Learning path / Task-first / Custom) + 11 canonical section types. Fixes navigation drift across modules — was a real problem where module A had "Quick Starts → Tutorials" while module B had "Guides → Reference → Glossary".
+- **Per-module section checklist**: each module ticks which canonical sections to include. AI suggests missing sections.
+- **Display name overrides** at project and module level — slugs stay canonical for folder paths.
+- **`verify` check #10** updated: now "sitemap consistency" (replaces less-actionable "no orphan test cases").
+- New template: `SITEMAP_PATTERNS_TEMPLATE.md`.
+
+## What's new in 1.5.3
+
+- **SETUP.md guide** (en + vi): comprehensive prerequisites for walkthrough (Claude in Chrome OR Playwright), record (ffmpeg), and source fetching (auth tokens). Step-by-step token acquisition for Notion, GitHub, Google Drive. Pre-walkthrough/pre-record checklists. Common errors and fixes.
+- **Quick start refreshed** to v1.5+ flow (intake-driven via `run`/`continue`).
+- Prerequisites notes added to `walkthrough`, `record`, `fetch` command sections in SKILL.md.
 
 ## What's new in 1.5.2
 

@@ -3,6 +3,119 @@
 All notable changes to this skill are documented in this file.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Semantic Versioning](https://semver.org/).
 
+## [1.5.4] - 2026-04-28
+
+Sitemap consistency feature — fixes navigation drift across modules.
+
+### Why
+
+Real-world example from a Cloud Advisor doc + Tagging doc: same project, two modules with completely different sitemap structures. Tagging used "Quick Starts → Tutorials"; Cloud Advisor used "Guides → Reference → Glossary → Troubleshooting". Users navigating between modules felt lost. AI generated each sitemap independently with no consistency rules.
+
+v1.5.4 adds:
+
+1. **Canonical section types** — fixed list of 11 types every section must map to (overview, initial-setup, quickstarts, tutorials, guides, concepts, dashboard, reference, api-reference, glossary, troubleshooting)
+2. **3 project patterns**:
+   - **Pattern A** (Learning path, default): `overview → initial-setup → quickstarts → tutorials → guides → concepts → reference → api-reference → troubleshooting → glossary`
+   - **Pattern B** (Task-first): `overview → quickstarts → guides → concepts → reference → troubleshooting → glossary`
+   - **Pattern C** (Custom): user defines order in project intake
+3. **Per-module section selection** — module intake has explicit "Sitemap sections" subsection with checkboxes for which canonical types this module includes
+4. **AI suggestions** — `plan` warns when a module is missing a section the project pattern includes (e.g., "Pattern A includes glossary but module 'storage' didn't tick it; suggest adding")
+5. **Display name overrides** — both project-level and module-level allow renaming canonical sections (slugs stay canonical for deploy paths)
+
+### Added
+
+- `templates/SITEMAP_PATTERNS_TEMPLATE.md` — definitive reference for section types, patterns, generation logic, validation rules
+- Project intake § 9 "Sitemap pattern" — pick A/B/C and optional display name overrides
+- Module intake § 7 "Sitemap sections" — per-module checkbox list of canonical types + per-module display name overrides
+- New `verify` check #10: sitemap consistency (was "no orphan test cases" before; consolidated into other checks)
+- INTAKE_GUIDE en/vi: added § 9 (project sitemap pattern) and § 7 (module sitemap sections) explanations
+- `plan --migrate-sitemap` flag for v1.5.3-or-earlier workspaces
+
+### Changed
+
+- **`plan` command** — now reads project pattern and per-module sections; generates `sitemap.md` with consistency warnings inline
+- **`categorize` command** — uses sitemap pattern order to compute Docusaurus `position` fields; respects display name overrides for `label`
+- **`verify` command** — check #10 replaced: was "no orphan test cases" (rarely actionable), now "sitemap consistency" (actionable, surfaces real navigation drift)
+- **SKILL.md** — `plan`, `verify`, `categorize` sections updated with sitemap pattern references
+
+### Deferred
+
+- **Auto-fix mode** for sitemap inconsistency — explicitly NOT implemented per user decision. AI warns but doesn't rename or restructure without user input. User remains the IA authority.
+- **Pattern templates for specific industries** (B2B SaaS, dev tools, infrastructure) — could be Pattern D/E/F. Defer until real demand.
+- **Cross-locale sitemap consistency** — translated docs follow source sitemap automatically; per-locale customization deferred.
+
+### Migration from v1.5.3
+
+For new projects: just use v1.5.4. Project intake template includes sitemap pattern selection.
+
+For existing v1.5.3 workspaces:
+```bash
+/docsmith plan --migrate-sitemap
+```
+AI:
+1. Inspects existing sitemap.md and modules
+2. Proposes Pattern A as default
+3. Suggests per-module section selections based on existing draft folder structure
+4. User confirms; AI updates project intake (§ 9) and module intakes (§ 7)
+5. Re-runs `plan` to regenerate sitemap.md per new rules
+
+Existing drafts are NOT modified. Only intake files and sitemap.md change.
+
+If you skip migration: `plan` still works (uses Pattern A defaults) but warnings about missing pattern config will appear until you complete intakes.
+
+### Why this is a patch (not minor)
+
+Adds 1 template, modifies 2 templates, 1 verify check changes meaning. No new commands. No schema-breaking changes for existing workspaces. Behavior is additive: project intake without § 9 falls back to Pattern A; module intake without § 7 falls back to AI inferring sections from drafts.
+
+## [1.5.3] - 2026-04-28
+
+Documentation patch — adds prerequisites guide for `walkthrough` and `record` commands. Bridges a gap between SKILL.md and operational reality.
+
+### Added
+
+- **`SETUP.md`** (English) — comprehensive prerequisites guide:
+  - Path 1: Claude in Chrome extension install (recommended for beginners)
+  - Path 2: Playwright MCP server (for headless / CI use)
+  - Path 3: ffmpeg setup for `record` (video tutorials)
+  - Environment variables for sources (NOTION_TOKEN, GITHUB_TOKEN, GOOGLE_DRIVE_TOKEN) and credentials (test account)
+  - How to obtain auth tokens for each source type (step-by-step Notion integration setup, GitHub fine-grained PAT, Google Drive service account)
+  - Per-project `.env` setup with direnv support
+  - Pre-walkthrough and pre-record checklists
+  - Common errors and fixes (login failures, browser timeouts, missing ffmpeg, wrong locale captures)
+  - Network/firewall allowlist requirements
+  - Performance tuning for slow walkthrough/fetch/translate
+  - "docsmith without browser" path for users who only need drafts + translation
+- **`SETUP.vi.md`** (Vietnamese) — full Vietnamese translation
+- **README "How it works" section** now links SETUP.md as required reading before first walkthrough/record run
+
+### Changed
+
+- **SKILL.md** — Prerequisites notes added to:
+  - `walkthrough` command (links to SETUP § Path 1 or Path 2)
+  - `record` command (links to SETUP § Path 3)
+  - `fetch` command (links to SETUP § Environment variables)
+- **README Quick start** — fully refreshed to v1.5+ flow:
+  - Step 1: SETUP reference (one-time)
+  - Step 2: init
+  - Step 3: module commands per feature
+  - Step 4: fill intake forms (links INTAKE_GUIDE)
+  - Step 5: run + continue
+  - Step 6: deploy
+  - Update flow section
+  - In-place section consolidated
+- **README "What's new"** — v1.5.3 entry added
+- Removed leftover content from old Quick start
+
+### Why this is a patch (not minor)
+
+No new commands, no schema changes, no new templates. Pure documentation gap-fill. Skill functionality identical to 1.5.2.
+
+### Migration from 1.5.2
+
+None needed. SETUP.md describes existing prerequisites that were always there but undocumented. Users who already have Claude in Chrome / Playwright / ffmpeg installed don't need to do anything.
+
+For users who tried v1.5.2 walkthrough/record and got confused by missing tools: read SETUP.md and install per Path 1/2/3 as needed.
+
 ## [1.5.2] - 2026-04-28
 
 Plugin format compliance — restructure to follow official Claude Code plugin marketplace specification. Required to fix `/plugin marketplace add dangtran1003/docsmith-v2` failing with "Marketplace file not found".

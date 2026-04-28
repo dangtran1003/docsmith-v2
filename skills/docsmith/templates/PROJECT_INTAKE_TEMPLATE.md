@@ -195,7 +195,51 @@ Translation review mode (only matters if target languages set above):
 - [ ] Batch (review whole-file diff — default, faster)
 - [ ] Auto-approve (no review — only for trusted glossary)
 
-## 9. Module intake files (auto-managed)
+## 9. Sitemap pattern (v1.5.4+)
+
+<!--
+  Pick the sitemap pattern this project uses. Applied to ALL modules.
+  See templates/SITEMAP_PATTERNS_TEMPLATE.md for full description of each pattern.
+-->
+
+Sitemap pattern:
+- [ ] Pattern A — Learning path (default, recommended for technical products)
+- [ ] Pattern B — Task-first (for mature products where users come knowing what they want)
+- [ ] Pattern C — Custom (you define the order below)
+
+If Pattern C, list section types in order (one per line, only listed sections will appear):
+
+```
+overview
+initial-setup
+quickstarts
+tutorials
+reference
+troubleshooting
+glossary
+```
+
+### Section display names (optional override)
+
+<!--
+  Default display names are used unless overridden here.
+  Leave backticks empty (``) to use default.
+  Slugs (left side) are canonical — do NOT rename. They drive folder paths.
+-->
+
+- overview: ``
+- initial-setup: ``
+- quickstarts: ``
+- tutorials: ``
+- guides: ``
+- concepts: ``
+- dashboard: ``
+- reference: ``
+- api-reference: ``
+- glossary: ``
+- troubleshooting: ``
+
+## 10. Module intake files (auto-managed)
 
 Modules registered (created via `/docsmith module <name>`):
 
@@ -216,6 +260,8 @@ Modules registered (created via `/docsmith module <name>`):
   - At least one source-type checkbox is ticked per Source N block (or no Source N)
   - Deploy preset is selected
   - Source language is selected
+  - Sitemap pattern is selected (Pattern A/B/C)
+  - If Pattern C, custom_order section types are valid
 
   Missing critical fields → AI stops with a list. Missing nice-to-have → defaults applied.
 -->

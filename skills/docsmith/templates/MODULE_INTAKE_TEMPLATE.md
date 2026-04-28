@@ -140,6 +140,51 @@ Module status:
 - [ ] Paused (skip in /docsmith run, kept for later)
 - [ ] Archived (do not process; do not delete from target on deploy --sync-deletes)
 
+## 7. Sitemap sections (v1.5.4+)
+
+<!--
+  Tick which canonical section types this module includes. AI will follow the
+  project's sitemap pattern when ordering them. See:
+  templates/SITEMAP_PATTERNS_TEMPLATE.md for what each section type means.
+
+  When you run /docsmith plan, AI checks this against the project pattern and
+  warns about missing sections (e.g., if project pattern A includes
+  'troubleshooting' but you didn't tick it here, AI suggests adding it).
+-->
+
+For this module, include:
+
+- [ ] overview          (always required — auto-ticked even if you forget)
+- [ ] initial-setup     (skip if module needs no specific setup beyond project-level)
+- [ ] quickstarts       (group of short task-focused docs, 5-10 mins each)
+- [ ] tutorials         (group of step-by-step learning docs with hand-holding)
+- [ ] guides            (group of how-tos; alternative to quickstarts — pick one based on project pattern)
+- [ ] concepts          (explanation docs for non-obvious concepts)
+- [ ] dashboard         (only if module has a dedicated dashboard or report view)
+- [ ] reference         (parameter tables, schema specs, lookup docs)
+- [ ] api-reference     (only if module has a stable API)
+- [ ] glossary          (term definitions specific to this module)
+- [ ] troubleshooting   (common issues and fixes for this module)
+
+### Display name overrides for this module (optional)
+
+<!--
+  Override how section names appear on the module's nav. Leave empty to use
+  project-level default (which itself defaults to canonical names).
+-->
+
+- overview: ``
+- initial-setup: ``
+- quickstarts: ``
+- tutorials: ``
+- guides: ``
+- concepts: ``
+- dashboard: ``
+- reference: ``
+- api-reference: ``
+- glossary: ``
+- troubleshooting: ``
+
 ---
 
 <!--
@@ -147,6 +192,9 @@ Module status:
   - Module slug, display name, folder set
   - At least one feature with at least one content type checked
   - At least one persona either inherited from project or specified here
+  - At least one sitemap section ticked (overview is auto-added if missing)
+  - Sections ticked are valid canonical types (per SITEMAP_PATTERNS_TEMPLATE)
 
   Missing critical → stop. Missing nice-to-have → AI infers from project intake or applies defaults.
+  Sitemap inconsistencies (e.g., missing section that project pattern includes) → WARN, not stop.
 -->
