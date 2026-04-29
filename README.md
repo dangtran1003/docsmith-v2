@@ -66,6 +66,8 @@ cd ~/repos/docsmith-v2 && git pull
 
 For a complete walkthrough of the skill's operating model — every command, every file, the workspace/target/deploy lifecycle, troubleshooting — read **[HOW_IT_WORKS.md](HOW_IT_WORKS.md)** (or **[HOW_IT_WORKS.vi.md](HOW_IT_WORKS.vi.md)** in Vietnamese).
 
+**For a hands-on tour from basic to advanced** (first project, multi-locale, video voiceover, drift detection, deploy patterns, troubleshooting): read **[USAGE_GUIDE.md](USAGE_GUIDE.md)** (or **[USAGE_GUIDE.vi.md](USAGE_GUIDE.vi.md)**).
+
 **Before your first `walkthrough` or `record` run**: read **[SETUP.md](SETUP.md)** (or **[SETUP.vi.md](SETUP.vi.md)**) to install the browser extension, set env vars, and configure credentials.
 
 **For BAs and content owners** filling out intake forms (no technical background needed): read **[INTAKE_GUIDE.md](INTAKE_GUIDE.md)** (or **[INTAKE_GUIDE.vi.md](INTAKE_GUIDE.vi.md)**).
@@ -243,7 +245,9 @@ docsmith-v2/                           # marketplace repo root
 ├── CHANGELOG.md
 ├── PUBLISHING.md
 ├── HOW_IT_WORKS.md / .vi.md           # user guides at repo root
+├── USAGE_GUIDE.md / .vi.md            # workflow guide (basic → advanced)
 ├── INTAKE_GUIDE.md / .vi.md           # BA-friendly intake guide
+├── SETUP.md / .vi.md                  # one-time prerequisites
 └── COMPARISON.md / .vi.md             # v1.1.0 vs v1.5.1 self-review
 ```
 
