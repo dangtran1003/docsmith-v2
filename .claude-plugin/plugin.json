@@ -1,6 +1,6 @@
 {
   "name": "docsmith",
-  "version": "1.5.4",
+  "version": "1.5.6",
   "description": "Build documentation from filled markdown intake forms. Fetches from Notion/GitHub/GDrive/URL/files, drafts content, captures screenshots, translates to multiple locales, deploys to Docusaurus.",
   "author": {
     "name": "dangtran1003"

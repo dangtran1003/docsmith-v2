@@ -195,6 +195,93 @@ Recording raw có thể to (10-50 MB / phút ở 1080p). docsmith tự động:
 
 Add `documentation/videos/raw/` vào `.gitignore` nếu chưa (init làm rồi).
 
+### 6. Cài TTS provider (chỉ khi voiceover strategy = "AI synthetic voice")
+
+Nếu project intake § 11 chọn "AI synthetic voice", cài 1 trong các TTS provider sau:
+
+#### Local Piper (mặc định, recommend)
+
+```bash
+pip install piper-tts
+
+# Download voice models cho mỗi locale sẽ dùng
+# Browse models: https://github.com/rhasspy/piper/blob/master/VOICES.md
+piper --download-voice en_US-amy-medium
+piper --download-voice vi_VN-25hours_single-low
+piper --download-voice ja_JP-nemo-low
+```
+
+Verify:
+```bash
+echo "Xin chào" | piper --model vi_VN-25hours_single-low --output_file test.wav
+```
+
+#### Local Coqui TTS
+
+```bash
+pip install TTS
+
+# List models
+python -m TTS.bin.list_models
+
+# Test synthesis
+tts --text "Xin chào" --model_name tts_models/multilingual/multi-dataset/xtts_v2 --out_path test.wav
+```
+
+#### OpenAI TTS
+
+```bash
+export OPENAI_API_KEY="sk-..."
+# Không cần install — dùng HTTP API
+```
+
+#### ElevenLabs
+
+```bash
+export ELEVENLABS_API_KEY="..."
+# Không cần install — dùng HTTP API
+# Browse voices: https://api.elevenlabs.io/v1/voices
+```
+
+#### Google Cloud TTS (Vietnamese tốt nhất)
+
+1. Tạo GCP project, enable "Cloud Text-to-Speech API"
+2. Tạo service account, download JSON key
+3. Set:
+```bash
+export GOOGLE_APPLICATION_CREDENTIALS=/path/to/key.json
+```
+
+Voice Vietnamese tốt nhất: `vi-VN-Wavenet-A` (female), `vi-VN-Wavenet-B` (male).
+
+#### Azure Cognitive Services
+
+1. Tạo Azure Speech resource
+2. Set:
+```bash
+export AZURE_SPEECH_KEY="..."
+export AZURE_SPEECH_REGION="eastus"   # hoặc region của bạn
+```
+
+Voice Vietnamese: `vi-VN-HoaiMyNeural`, `vi-VN-NamMinhNeural`.
+
+### 7. Subtitle generation với Whisper (chỉ khi voiceover = human)
+
+Nếu voiceover strategy là "Human recorded" VÀ muốn auto generate subtitle, cài Whisper:
+
+```bash
+pip install openai-whisper
+# Hoặc nhanh hơn cho local inference:
+pip install faster-whisper
+```
+
+Verify:
+```bash
+whisper test.mp3 --model base --output_format vtt --language vi
+```
+
+Skip nếu bạn cung cấp `.vtt` thủ công HOẶC voiceover là silent/AI (subtitle auto-gen từ script trong các case đó).
+
 ---
 
 ## Environment variables cho sources và credentials

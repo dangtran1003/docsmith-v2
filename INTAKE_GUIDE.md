@@ -60,6 +60,24 @@ Some sections are templates you can copy. Look for `### Source 1`, `### Source 2
 
 **Don't worry about leaving "blank" sections** — if every backtick is empty and every checkbox is unticked in a Source/Feature block, AI ignores it.
 
+### Rule 4: Skip "Advanced" sections (v1.5.6+)
+
+Sections starting with `<details>` and labeled "Advanced" are **collapsed by default**. If you see them in your editor as already-collapsed clickable headers — that's correct behavior. **Most projects don't need to expand any of these.** The skill uses the default values inside.
+
+Open them only if:
+- You have a specific reason to customize (regulated industry needs formal voice, mobile module needs different aspect ratio, etc.)
+- The current default doesn't work after first run
+
+For your **first project**, fill only:
+- Section 1 (Product) — REQUIRED
+- Section 2 (Audience > Primary persona) — REQUIRED
+- Section 3 (Languages > Source language and Target languages) — REQUIRED
+- Section 4 (Deploy > Preset) — REQUIRED
+- Section 5 (Credentials env var names) — REQUIRED if you'll run walkthrough
+- Section 6 (Source 1) — Optional but recommended
+
+Skip everything else. Run `/docsmith run`. If output isn't what you want, expand relevant Advanced section and adjust.
+
 ## What each section means (project.md)
 
 ### 1. Product
@@ -211,6 +229,82 @@ Each module then ticks which sections it includes (in module intake § Sitemap s
 
 Auto-managed. Don't edit by hand. The `module` command updates this section when you create/archive modules.
 
+### 11. Media policy (v1.5.5+)
+
+Controls how screenshots and videos are produced. Two parts: screenshots and videos. The defaults work for 80% of projects — only override if you have specific needs.
+
+#### Screenshots
+
+**Density**: how many screenshots per doc, by content type. Defaults:
+- Tutorial: 1 per major step (~5-10 per doc)
+- How-to: 1 per heading (~3-5 per doc)
+- Reference: none (text + tables only)
+- Concept: optional (only if abstract concept needs illustration)
+- Troubleshooting: 1 per error case
+- Quickstart: 1 per heading + 1 final state
+
+**Style**: viewport-only (clean, no browser chrome) is the default. Other options exist for specific cases.
+
+**Aspect ratio**: 16:9 desktop (1280×720) is default. Mobile-portrait for mobile-first products.
+
+**Per-locale strategy** (when project has multiple target languages):
+- **Source-only** (default): capture once in source language UI, reuse for all translated docs. Cheapest. Translated docs note "Screenshots in English UI".
+- **Per-locale**: capture once per target locale. Triple cost for 3 locales but native UX.
+- **Hybrid**: source full + selective per-locale for important touchpoints (login, errors).
+
+#### Videos
+
+**Density**: when to require videos.
+- Tutorial: required (1 per tutorial, ≤90s)
+- How-to: optional (only if >5 steps, ≤30s)
+- Reference: never
+- Concept: optional (≤2min for animations)
+
+**Voiceover strategy** is the biggest decision:
+
+- **Silent + on-screen captions** (default): no audio. Text overlays describe actions. Cheapest. Multi-locale just needs different on-screen text. Recommended for first try.
+- **AI synthetic voice per locale**: each locale gets a TTS-generated voiceover. Best UX. Costs TTS API calls. Needs TTS provider configured.
+- **Source voice + per-locale subtitles**: 1 audio in source language, .vtt subtitles per locale. Cheap, decent UX.
+- **Human recorded voiceover**: manual recording outside docsmith. Highest quality. Premium content.
+- **No video at all**: skip `record` command entirely.
+
+**TTS provider** (only if AI synthetic voice):
+- **local-piper** (default): free, offline, medium quality
+- **local-coqui**: free, more voices, slower
+- **openai**: paid (~$15/1M chars), wide languages
+- **elevenlabs**: paid ($5-99/mo), highest quality
+- **google-cloud**: paid (~$4/1M chars), good Vietnamese
+- **azure-cognitive**: paid, many neural voices
+
+For each locale used, specify a voice ID/name from the provider's catalog.
+
+#### Subtitles
+
+When to generate `.vtt`:
+- **Source-only** or **per-locale** subtitles (per-locale is default for multi-locale)
+- **Auto from script**: works for Silent and AI voice strategies (deterministic)
+- **STT after recording**: only for human voiceover (needs Whisper)
+- **Manual**: user provides `.vtt` files
+
+Sidecar `.vtt` (default): one video file, multiple subtitle files. Burned-in: separate video per locale.
+
+#### Cost reality check
+
+Default config (silent + source-only screenshots) for 3 locales × 5 modules × 30 docs:
+- Walkthrough: ~30 min runtime
+- Recording: instant (silent)
+- Storage: ~65 MB total
+- TTS cost: $0
+- **Time investment: ~1 hour**
+
+Premium config (AI voice per locale + per-locale screenshots):
+- Walkthrough: ~90 min (3× run for 3 locales)
+- Recording: TTS API calls (~$5-10 first run)
+- Storage: ~200 MB
+- **Time investment: ~3 hours first run, ~30 min update**
+
+Start with default. Upgrade strategy later when you've shipped one cycle and know what matters.
+
 ## What each section means (modules/<n>.md)
 
 Module files are simpler — they only contain things that DIFFER from the project default.
@@ -301,6 +395,17 @@ Tick which canonical section types this module includes. The order in which they
 **AI suggestions**: when you run `/docsmith plan`, AI checks each module against the project pattern and warns if a module is missing a section the pattern includes. Decide per warning — sometimes a section legitimately doesn't apply.
 
 **Display name overrides**: optional per-module names (e.g., this module's "Quick Starts" displays as "Get started fast" in nav). Override at module level overrides project level overrides default.
+
+### 8. Media override (v1.5.5+)
+
+Most modules inherit media policy from project intake § 11. Only override when this module is fundamentally different. Common cases:
+
+- **Compliance module** needs human voiceover instead of project's AI voice
+- **Admin module** has different UI per locale (force per-locale screenshots)
+- **Mobile module** in an otherwise desktop project (different aspect ratio)
+- **Reference-only module** with no screenshots needed at all
+
+Each override option has an "Inherit from project" tick (default). Only tick the override if this module differs.
 
 ## Common patterns
 

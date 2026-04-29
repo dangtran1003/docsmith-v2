@@ -60,6 +60,24 @@ Một số section là template lặp lại. Tìm `### Source 1`, `### Source 2`
 
 **Đừng lo về section "trống"** — nếu mọi backtick đều empty và mọi checkbox đều không tick trong block Source/Feature, AI sẽ ignore.
 
+### Quy tắc 4: Skip section "Advanced" (v1.5.6+)
+
+Section bắt đầu bằng `<details>` và label "Advanced" mặc định **collapse**. Nếu thấy chúng trong editor như header có thể click — đúng rồi. **Đa số project không cần expand cái nào.** Skill dùng default value bên trong.
+
+Chỉ mở khi:
+- Có lý do cụ thể cần customize (regulated industry cần formal voice, module mobile cần aspect ratio khác, vv.)
+- Default hiện tại không hợp sau lần chạy đầu
+
+Cho **project đầu tiên**, chỉ điền:
+- Section 1 (Product) — BẮT BUỘC
+- Section 2 (Audience > Primary persona) — BẮT BUỘC
+- Section 3 (Languages > Source và Target) — BẮT BUỘC
+- Section 4 (Deploy > Preset) — BẮT BUỘC
+- Section 5 (Credentials env var names) — BẮT BUỘC nếu chạy walkthrough
+- Section 6 (Source 1) — Optional nhưng recommend
+
+Skip mọi thứ còn lại. Chạy `/docsmith run`. Nếu output không như ý, mới expand Advanced section liên quan và adjust.
+
 ## Mỗi section có ý nghĩa gì (project.md)
 
 ### 1. Product
@@ -211,6 +229,82 @@ Mỗi module sau đó tick section nào include (trong module intake § Sitemap 
 
 Auto-managed. Đừng edit thủ công. Command `module` update section này khi bạn create/archive module.
 
+### 11. Media policy (v1.5.5+)
+
+Quyết định cách screenshot và video được tạo ra. 2 phần: screenshots và videos. Default work cho 80% project — chỉ override khi có nhu cầu cụ thể.
+
+#### Screenshots
+
+**Density**: bao nhiêu ảnh per doc, theo content type. Defaults:
+- Tutorial: 1 / major step (~5-10 / doc)
+- How-to: 1 / heading (~3-5 / doc)
+- Reference: không có (chỉ text + tables)
+- Concept: optional (chỉ khi concept abstract cần illustration)
+- Troubleshooting: 1 / error case
+- Quickstart: 1 / heading + 1 final state
+
+**Style**: viewport-only (clean, không browser chrome) là default. Options khác cho case cụ thể.
+
+**Aspect ratio**: 16:9 desktop (1280×720) là default. Mobile-portrait cho mobile-first product.
+
+**Per-locale strategy** (khi project multi-language):
+- **Source-only** (default): capture 1 lần ở source language UI, reuse cho tất cả translated docs. Rẻ nhất. Translated docs note "Screenshots in English UI".
+- **Per-locale**: capture 1 lần per target locale. Cost gấp 3 cho 3 locales nhưng UX native.
+- **Hybrid**: source full + selective per-locale cho important touchpoints (login, errors).
+
+#### Videos
+
+**Density**: khi nào cần video.
+- Tutorial: required (1 / tutorial, ≤90s)
+- How-to: optional (chỉ khi >5 steps, ≤30s)
+- Reference: never
+- Concept: optional (≤2min cho animation)
+
+**Voiceover strategy** là quyết định lớn nhất:
+
+- **Silent + on-screen captions** (default): không audio. Text overlay mô tả action. Rẻ nhất. Multi-locale chỉ cần text overlay khác. Recommend cho lần đầu.
+- **AI synthetic voice per locale**: mỗi locale có voiceover TTS-generated riêng. UX tốt nhất. Tốn TTS API calls. Cần TTS provider configured.
+- **Source voice + per-locale subtitles**: 1 audio source, .vtt subtitle per locale. Rẻ, UX khá.
+- **Human recorded voiceover**: thu âm thủ công ngoài docsmith. Quality cao nhất. Premium content.
+- **Không video gì cả**: skip command `record` hoàn toàn.
+
+**TTS provider** (chỉ khi AI synthetic voice):
+- **local-piper** (default): free, offline, quality medium
+- **local-coqui**: free, nhiều voice hơn, chậm hơn
+- **openai**: paid (~$15/1M chars), wide languages
+- **elevenlabs**: paid ($5-99/mo), quality cao nhất
+- **google-cloud**: paid (~$4/1M chars), Vietnamese tốt
+- **azure-cognitive**: paid, nhiều neural voices
+
+Cho mỗi locale dùng, chỉ định voice ID/name từ catalog của provider.
+
+#### Subtitles
+
+Khi nào generate `.vtt`:
+- **Source-only** hoặc **per-locale** subtitles (per-locale là default cho multi-locale)
+- **Auto từ script**: work cho Silent và AI voice (deterministic)
+- **STT sau recording**: chỉ cho human voiceover (cần Whisper)
+- **Manual**: user cung cấp file `.vtt`
+
+Sidecar `.vtt` (default): 1 video file, nhiều subtitle file. Burn-in: video riêng per locale.
+
+#### Cost reality check
+
+Default config (silent + source-only screenshots) cho 3 locales × 5 modules × 30 docs:
+- Walkthrough: ~30 min runtime
+- Recording: instant (silent)
+- Storage: ~65 MB tổng
+- TTS cost: $0
+- **Thời gian: ~1 giờ**
+
+Premium config (AI voice per locale + per-locale screenshots):
+- Walkthrough: ~90 min (3× run cho 3 locales)
+- Recording: TTS API calls (~$5-10 lần đầu)
+- Storage: ~200 MB
+- **Thời gian: ~3 giờ lần đầu, ~30 min update**
+
+Bắt đầu với default. Upgrade strategy sau khi đã ship 1 cycle và biết cái gì matter.
+
 ## Mỗi section có ý nghĩa gì (modules/<n>.md)
 
 File module đơn giản hơn — chỉ chứa thứ KHÁC project default.
@@ -301,6 +395,17 @@ Tick section type canonical mà module này include. Thứ tự xuất hiện do
 **AI suggestions**: khi chạy `/docsmith plan`, AI check mỗi module với project pattern và warn nếu module thiếu section pattern bao gồm. Quyết định per warning — đôi khi 1 section thực sự không áp dụng.
 
 **Display name overrides**: tên tùy chỉnh per module (vd module này hiển thị "Quick Starts" thành "Bắt đầu nhanh" trong nav). Override module level > project level > default.
+
+### 8. Media override (v1.5.5+)
+
+Đa số module inherit media policy từ project intake § 11. Chỉ override khi module này khác biệt cơ bản. Common cases:
+
+- **Module compliance** cần human voiceover thay vì AI voice của project
+- **Module admin** có UI khác nhau theo locale (force per-locale screenshots)
+- **Module mobile** trong project chủ yếu desktop (aspect ratio khác)
+- **Module reference-only** không cần screenshot nào
+
+Mỗi override option có tick "Inherit from project" (default). Chỉ tick override khi module thực sự khác.
 
 ## Common patterns
 

@@ -269,6 +269,8 @@ Flags:
 
 **Prerequisites**: browser automation tool (Claude in Chrome extension OR Playwright MCP) AND test account credentials set as env vars. See [SETUP.md](../../SETUP.md) — section "Path 1: Claude in Chrome" or "Path 2: Playwright MCP".
 
+**Media policy**: respects screenshot density rules and per-locale strategy from project intake § 11 (and module intake § 8 overrides). Default behavior is "source-only" capture (one screenshot reused across all locales). See [templates/MEDIA_POLICY_TEMPLATE.md](templates/MEDIA_POLICY_TEMPLATE.md) for density rules per content type, style options, and aspect ratio.
+
 Three-phase pipeline:
 
 ```
@@ -296,7 +298,9 @@ Items marked `product-bug` tracked in `walkthrough/active-product-bugs.yaml` acr
 
 ### `record` (AI)
 
-**Prerequisites**: same as `walkthrough` PLUS ffmpeg installed for video encoding. See [SETUP.md](../../SETUP.md) — section "Path 3: For `record` (tutorial videos)".
+**Prerequisites**: same as `walkthrough` PLUS ffmpeg installed for video encoding. If voiceover strategy is "AI synthetic voice", also need TTS provider configured (project intake § 11). For local TTS (default): Piper or Coqui binaries installed. For remote TTS: API auth env var set. See [SETUP.md](../../SETUP.md) — section "Path 3: For `record` (tutorial videos)".
+
+**Media policy**: respects video density rules, length caps, voiceover strategy, and TTS provider from project intake § 11 (and module intake § 8 overrides). Default behavior is "Silent + on-screen captions" (no audio, no TTS needed). See [templates/MEDIA_POLICY_TEMPLATE.md](templates/MEDIA_POLICY_TEMPLATE.md) § 4-7 for full options.
 
 Optional. Scans drafts for `<!-- VIDEO ... -->` markers and records short tutorial videos via browser screen recording. See [templates/VIDEO_MARKER_TEMPLATE.md](templates/VIDEO_MARKER_TEMPLATE.md) for marker syntax and [templates/WALKTHROUGH_VIDEO_PLAN_TEMPLATE.md](templates/WALKTHROUGH_VIDEO_PLAN_TEMPLATE.md) for capture plan.
 
@@ -321,7 +325,7 @@ Glossary file (per locale): `documentation/standards/glossary.<locale>.yaml` ([t
 
 ### `verify` (AI)
 
-10 checks across drafts:
+11 checks across drafts:
 1. No `placehold.co` URLs remain
 2. No broken image refs
 3. Voice consistency score ≥ threshold
@@ -332,6 +336,7 @@ Glossary file (per locale): `documentation/standards/glossary.<locale>.yaml` ([t
 8. Cross-references valid
 9. Sitemap entries match draft files
 10. Sitemap consistency: all modules use the project pattern; warns when module is missing a section the project pattern includes (non-blocking)
+11. Media compliance (v1.5.5+): screenshots match density policy per content type; videos within length caps; voiceover/subtitle files exist when strategy expects them; per-locale media follows project strategy
 
 **Flags**:
 - `[<doc-glob>]` — scope to specific docs (faster iteration)
@@ -443,10 +448,20 @@ docsmith's footprint at the project root is **exactly one folder: `documentation
     ├── archive/<ts>/                   # Re-run protocol backups
     ├── images/
     │   └── instances/                  # = module.folder
-    │       └── create-form-filled.png
+    │       ├── create-form-filled.png       # source-locale (default)
+    │       └── vi/                          # per-locale override (when project = per-locale)
+    │           └── create-form-filled.png
     ├── videos/
     │   ├── raw/                        # Gitignored
-    │   └── instance-create-tour.mp4
+    │   ├── instance-create-tour.mp4    # final video (silent default)
+    │   ├── voiceover/                  # When voiceover strategy = AI or human
+    │   │   ├── instance-create-tour.en.mp3
+    │   │   ├── instance-create-tour.vi.mp3
+    │   │   └── instance-create-tour.jp.mp3
+    │   └── subtitles/                  # When subtitles enabled
+    │       ├── instance-create-tour.en.vtt
+    │       ├── instance-create-tour.vi.vtt
+    │       └── instance-create-tour.jp.vtt
     ├── deployments/                    # Audit trail (1.5.1+: moved INSIDE documentation/)
     │   └── <ts>-<target>/
     │       ├── manifest.yaml

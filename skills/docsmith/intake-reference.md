@@ -92,6 +92,50 @@ Pattern: `### Source N` (or `#### Feature N`) where N is a positive integer. AI 
 - HTML comments `<!-- ... -->` (treated as instructions to the BA, ignored by parser)
 - Code fences (preserved verbatim if a field type is "script", e.g. pre-walkthrough setup)
 
+### `<details>` / `<summary>` blocks (v1.5.6+)
+
+Project and module intake templates use HTML `<details>` blocks to collapse advanced sections. Render behavior:
+
+- GitHub / VS Code preview: `<summary>` text shown; content collapsed, expandable on click
+- Plain markdown viewer: all content shown
+- Cursor / GitHub.dev: collapsed by default
+
+AI parser treats `<details>` blocks as transparent:
+
+1. Strip `<details>` opening tag and matching `</details>` closing tag
+2. Strip `<summary>...</summary>` line entirely
+3. Parse content inside as if no wrapper existed
+
+Result: BA sees ~100 lines top-level (essential sections); ~250 lines total exists in file (advanced sections collapsed). AI sees full content for parsing.
+
+When BA expands a `<details>` block and edits a field, AI picks up the edit normally. When BA leaves it collapsed, AI uses defaults documented in the section.
+
+Example:
+
+```markdown
+## 4. Deploy (*)
+
+Preset:
+- [x] Standalone
+- [ ] Docusaurus
+
+<details>
+<summary><b>Advanced — collision behavior</b> (using defaults)</summary>
+
+When target file exists with different content:
+- [x] Warn (default)
+- [ ] Skip
+- [ ] Overwrite
+- [ ] Prompt
+
+</details>
+```
+
+AI parses:
+- `deploy.preset = standalone` (from top section)
+- `deploy.on_collision = warn` (from inside `<details>`)
+- BA didn't expand the details block; default tick `Warn` is taken
+
 ## 2. Layered config resolution
 
 When a command runs `/docsmith run instances`, AI resolves config in this order:

@@ -1,10 +1,11 @@
 <!--
   PROJECT INTAKE — Source of truth for the whole documentation project.
 
-  This is a fillable form. Edit by:
-   - Ticking checkboxes:    [ ] → [x]
-   - Filling backtick fields:  `value here`
-   - Adding/removing source sections at the bottom.
+  How to fill:
+   - Tick checkboxes:    [ ] → [x]
+   - Fill backtick fields: `value here`
+   - Sections marked "Advanced — using defaults" are COLLAPSED by default.
+     Most projects skip these. Expand only if you need to customize.
 
   Save and run /docsmith run to start.
 
@@ -12,18 +13,13 @@
    - REQUIRED fields are marked with (*). Missing → /docsmith run will stop.
    - Backtick values must be inside the `...` markers.
    - Checkbox: tick exactly one in single-select groups; multiple in multi-select.
-
-  Layered config:
-   - This file applies to ALL modules in the project.
-   - Module-level intake at documentation/intake/modules/<name>.md overrides
-     specific fields per module. See /docsmith module <name>.
 -->
 
 # Project Intake — `Product Name Here`
 
 ## 1. Product (*)
 
-- Product slug (lowercase, kebab-case, globally unique): `your-product-slug`
+- Product slug (lowercase, kebab-case): `your-product-slug`
 - Product display name: `Your Product`
 - Product URL (for walkthrough): `https://console.example.com`
 - One-line description: `What does this product do?`
@@ -37,11 +33,14 @@
   - [ ] Low (general users, non-technical)
   - [ ] Medium (semi-technical, comfortable with web apps)
   - [ ] High (developers, sysadmins, command-line users)
-- Primary goal (what they want to achieve with the product): `Why do they use this?`
+- Primary goal: `Why do they use this?`
 
-### Secondary personas (optional)
+<details>
+<summary><b>Advanced — secondary personas</b> (skip if only one audience)</summary>
 
-<!-- Copy this block to add more personas. -->
+Add additional personas if you have clearly different audience segments. Don't add them just because you can — every persona makes content harder to write for everyone.
+
+### Secondary persona 1
 
 - Role: ``
 - Technical level:
@@ -50,7 +49,9 @@
   - [ ] High
 - Primary goal: ``
 
-## 3. Languages
+</details>
+
+## 3. Languages (*)
 
 Source language (the language you draft in):
 - [ ] English (en)
@@ -60,31 +61,20 @@ Source language (the language you draft in):
 
 Target languages (translate to — leave all unchecked for single-locale):
 - [ ] None (single-locale project)
-- [ ] English (en)
 - [ ] Vietnamese (vi)
 - [ ] Japanese (jp)
 - [ ] Other: ``
 
-### Glossary files (auto-discovered, no need to fill)
+<details>
+<summary><b>Advanced — glossary settings</b> (using defaults)</summary>
 
-<!--
-  For each target language, AI looks for a glossary file at this fixed path:
-    documentation/standards/glossary.<locale>.yaml
-
-  Example: target language = vi → AI reads documentation/standards/glossary.vi.yaml
-
-  These are AUTO-CREATED by `init` (empty templates) when you specify target
-  languages above. You don't need to set anything here. To enforce specific
-  terms, edit the glossary file directly.
-
-  See templates/GLOSSARY_TEMPLATE.yaml for format.
--->
-
-Glossary location (informational, not editable): `documentation/standards/glossary.<locale>.yaml`
+Glossary location is fixed: `documentation/standards/glossary.<locale>.yaml`. Auto-created when you add target languages.
 
 Glossary required for translation:
-- [ ] No, run translation even without glossary (default — AI uses general knowledge)
+- [x] No, run translation even without glossary (default — AI uses general knowledge)
 - [ ] Yes, fail translate if glossary missing for a target language
+
+</details>
 
 ## 4. Deploy (*)
 
@@ -92,59 +82,68 @@ Preset:
 - [ ] Standalone (no deploy target — workspace IS the artifact)
 - [ ] Docusaurus
 
-If Docusaurus, target path (relative to project root or absolute): `../path-to-docusaurus`
+If Docusaurus, target path: `../path-to-docusaurus`
 
-On collision (when target file differs from workspace):
-- [ ] Warn (default — block deploy, ask user to resolve)
+<details>
+<summary><b>Advanced — collision behavior</b> (using defaults)</summary>
+
+When target file exists with different content:
+- [x] Warn (default — block deploy, ask user to resolve)
 - [ ] Skip (keep target as-is)
 - [ ] Overwrite (replace target)
 - [ ] Prompt (ask per file)
 
-## 5. Voice and tone
+</details>
+
+<details>
+<summary><b>Advanced — voice and tone</b> (using defaults)</summary>
+
+The defaults below produce friendly-professional, second-person, 8th-grade reading level — works for ~80% of technical products. Override only if you have a specific style (e.g., regulated industry needs formal).
 
 Tone:
-- [ ] Casual (like talking to a friend)
-- [ ] Friendly-professional (default)
-- [ ] Technical-direct (concise, no fluff)
-- [ ] Formal (corporate, regulated industries)
+- [ ] Casual
+- [x] Friendly-professional (default)
+- [ ] Technical-direct
+- [ ] Formal
 
 Perspective:
-- [ ] Second-person ("you create an instance")
-- [ ] First-person plural ("we create an instance")
-- [ ] Third-person ("the user creates an instance")
+- [x] Second-person — "you create an instance" (default)
+- [ ] First-person plural — "we create an instance"
+- [ ] Third-person — "the user creates an instance"
 
-Reading level (target):
-- [ ] 6th grade (broadest audience)
-- [ ] 8th grade (default for technical docs)
+Reading level:
+- [ ] 6th grade
+- [x] 8th grade (default)
 - [ ] 10th grade
 - [ ] College
 
-Custom terms to AVOID (comma-separated): `e.g., utilize, leverage, synergize`
+Custom terms to AVOID: ``  (e.g., utilize, leverage)
 
-## 6. Credentials for product walkthrough
+</details>
+
+## 5. Credentials for product walkthrough
 
 <!--
-  Walkthrough automation needs to log into the product. Provide ENV VAR NAMES
-  here, not actual passwords. Set the env vars before running /docsmith wt.
+  Required only if you'll use /docsmith walkthrough or /docsmith record.
+  ENV VAR NAMES only — never actual passwords.
 -->
 
 - Username env var: `MYPRODUCT_TEST_USER`
 - Password env var: `MYPRODUCT_TEST_PASS`
-- (Optional) Multi-factor auth env var: ``
-- (Optional) Test account note: `e.g., free tier, no production data`
 
-## 7. Knowledge sources
+<details>
+<summary><b>Advanced — MFA / SSO</b> (skip for plain login)</summary>
+
+- Multi-factor auth env var: ``
+- Test account note: `e.g., free tier, no production data`
+
+</details>
+
+## 6. Knowledge sources
 
 <!--
-  AI fetches content from these sources to inform drafts. Copy a "Source N"
-  block to add more.
-
-  Auth env vars are required for private sources:
-   - Notion:        NOTION_TOKEN
-   - GitHub private: GITHUB_TOKEN
-   - Google Drive:   GOOGLE_DRIVE_TOKEN  (or GOOGLE_APPLICATION_CREDENTIALS)
-   - URL fetch:      no auth (public only)
-   - Local file:     no auth (path on disk)
+  AI fetches content from these sources to inform drafts.
+  Skip entirely if AI should draft from scratch using only intake info.
 -->
 
 ### Source 1
@@ -158,7 +157,11 @@ Custom terms to AVOID (comma-separated): `e.g., utilize, leverage, synergize`
 - URL or path or ID: ``
 - Name (for reference): ``
 - Auth env var (if private): ``
-- Notes: ``
+
+<details>
+<summary><b>Advanced — additional sources</b> (skip if you only have 1 source)</summary>
+
+Copy "Source 1" block below for each additional source. Increment N.
 
 ### Source 2
 
@@ -171,44 +174,52 @@ Custom terms to AVOID (comma-separated): `e.g., utilize, leverage, synergize`
 - URL or path or ID: ``
 - Name: ``
 - Auth env var (if private): ``
-- Notes: ``
 
-<!--
-  Add more sources by copying the "Source N" block above and incrementing N.
--->
+### Source 3
 
-## 8. Auto-run behavior
+- Type:
+  - [ ] Notion page
+  - [ ] GitHub repo
+  - [ ] Google Drive doc
+  - [ ] Public URL
+  - [ ] Local file
+- URL or path or ID: ``
+- Name: ``
+- Auth env var (if private): ``
 
-When you run `/docsmith run`, where should AI pause for human review?
+</details>
 
-- [ ] After plan (before draft) — review the documentation plan first
-- [ ] After draft (before walkthrough) — default; review drafts before product verification
-- [ ] Before deploy — let everything generate, only review the deploy plan
-- [ ] Never (full auto) — risky; only for trusted re-runs after first success
+<details>
+<summary><b>Advanced — auto-run behavior</b> (using defaults)</summary>
 
-Drift detection action (when product UI changes):
-- [ ] Prompt per item (default — safest)
-- [ ] Auto-apply HIGH confidence fixes (faster, requires good caption discipline)
+Where AI pauses for human review during `/docsmith run`:
+- [ ] After plan (before draft)
+- [x] After draft (before walkthrough) — default; safest for first run
+- [ ] Before deploy
+- [ ] Never (full auto)
 
-Translation review mode (only matters if target languages set above):
-- [ ] Per-block (review each block individually — slowest, safest)
-- [ ] Batch (review whole-file diff — default, faster)
-- [ ] Auto-approve (no review — only for trusted glossary)
+Drift detection action:
+- [x] Prompt per item (default — safest)
+- [ ] Auto-apply HIGH confidence fixes
 
-## 9. Sitemap pattern (v1.5.4+)
+Translation review mode:
+- [ ] Per-block (review each block individually)
+- [x] Batch (review whole-file diff — default)
+- [ ] Auto-approve
 
-<!--
-  Pick the sitemap pattern this project uses. Applied to ALL modules.
-  See templates/SITEMAP_PATTERNS_TEMPLATE.md for full description of each pattern.
--->
+</details>
+
+<details>
+<summary><b>Advanced — sitemap pattern</b> (using Pattern A default)</summary>
+
+Pattern A (Learning path) default works for most technical products.
 
 Sitemap pattern:
-- [ ] Pattern A — Learning path (default, recommended for technical products)
-- [ ] Pattern B — Task-first (for mature products where users come knowing what they want)
+- [x] Pattern A — Learning path (default — overview → setup → quickstarts → tutorials → reference → troubleshooting → glossary)
+- [ ] Pattern B — Task-first (overview → quickstarts → guides → reference → troubleshooting)
 - [ ] Pattern C — Custom (you define the order below)
 
-If Pattern C, list section types in order (one per line, only listed sections will appear):
-
+If Pattern C, list section types in order:
 ```
 overview
 initial-setup
@@ -219,13 +230,7 @@ troubleshooting
 glossary
 ```
 
-### Section display names (optional override)
-
-<!--
-  Default display names are used unless overridden here.
-  Leave backticks empty (``) to use default.
-  Slugs (left side) are canonical — do NOT rename. They drive folder paths.
--->
+### Section display name overrides (optional)
 
 - overview: ``
 - initial-setup: ``
@@ -239,11 +244,96 @@ glossary
 - glossary: ``
 - troubleshooting: ``
 
-## 10. Module intake files (auto-managed)
+</details>
+
+<details>
+<summary><b>Advanced — media policy</b> (using defaults — silent video, source-only screenshots)</summary>
+
+Default config: capture screenshots once in source language UI (reused for translated docs), generate silent videos with on-screen captions. **Cost: $0 TTS, ~1 hour for 30 docs × 3 locales.** Override below for premium output (~$5-10 TTS cost, ~3 hours).
+
+### Screenshots
+
+Density per content type (override per module if needed):
+- Tutorial: `1 per major step` (default)
+- How-to: `1 per heading` (default)
+- Reference: `none` (default)
+- Concept: `optional` (default)
+- Troubleshooting: `1 per error case` (default)
+- Quickstart: `1 per heading + 1 final state` (default)
+
+Style:
+- [x] viewport-only — clean, no browser chrome (default)
+- [ ] full-window — includes URL bar, tabs
+- [ ] cropped-element — focus on relevant element + 20px padding
+- [ ] annotated — overlay arrows / numbered callouts (manual edit needed)
+
+Aspect ratio:
+- [x] 16:9 desktop / 1280×720 (default)
+- [ ] 4:3 legacy / 1024×768
+- [ ] mobile portrait / 375×812
+- [ ] square / 1080×1080
+- [ ] custom: ``
+
+Per-locale strategy:
+- [x] Source-only — capture in source UI, reuse for translated docs (default — cheapest)
+- [ ] Per-locale — re-capture for each target locale
+- [ ] Hybrid — source full + selective per-locale for important touchpoints
+
+### Videos
+
+Density per content type:
+- Tutorial: `required, ≤ 90s` (default)
+- How-to: `optional if >5 steps, ≤ 30s` (default)
+- Reference: `never` (default)
+- Concept: `optional, ≤ 2min` (default)
+- Troubleshooting: `never` (default)
+- Quickstart: `optional, ≤ 60s` (default)
+
+Voiceover strategy:
+- [x] Silent + on-screen captions (default — cheapest, no TTS needed)
+- [ ] AI synthetic voice per locale
+- [ ] Source voice + per-locale subtitles
+- [ ] Human recorded voiceover
+- [ ] No video at all (skip `record` command entirely)
+
+#### TTS provider (only if "AI synthetic voice")
+
+- [x] local-piper — free, offline (default)
+- [ ] local-coqui — free, more voices
+- [ ] openai — paid (~$15/1M chars)
+- [ ] elevenlabs — paid ($5-99/mo), highest quality
+- [ ] google-cloud — paid (~$4/1M chars), good Vietnamese
+- [ ] azure-cognitive — paid
+
+Voice ID/name per locale (only if AI voice):
+- en: ``
+- vi: ``
+- jp: ``
+
+Auth env var (only if non-local TTS):
+- TTS provider env var: ``
+
+### Subtitles / captions
+
+Generate `.vtt`:
+- [ ] No subtitles
+- [ ] Source-only `.vtt`
+- [x] Per-locale `.vtt` (default if multi-locale)
+
+Generation method:
+- [x] Auto from script (default)
+- [ ] STT after recording (needs Whisper)
+- [ ] Manual user-provided `.vtt`
+
+Caption packaging:
+- [x] Sidecar `.vtt` files (default)
+- [ ] Burned into video
+
+</details>
+
+## 7. Module intake files (auto-managed)
 
 Modules registered (created via `/docsmith module <name>`):
-
-<!-- AI updates this list automatically when you run /docsmith module. -->
 
 <!-- BEGIN MODULES LIST -->
 
@@ -254,14 +344,11 @@ Modules registered (created via `/docsmith module <name>`):
 ---
 
 <!--
-  Validation: when you run /docsmith run, AI checks:
-  - All (*) sections have content
-  - Backticks have non-default values
-  - At least one source-type checkbox is ticked per Source N block (or no Source N)
-  - Deploy preset is selected
-  - Source language is selected
-  - Sitemap pattern is selected (Pattern A/B/C)
-  - If Pattern C, custom_order section types are valid
+  Validation: when /docsmith run triggers, AI checks:
+  - Required fields (Product, Audience primary, Languages source, Deploy preset)
+  - Credentials env vars (if walkthrough in pipeline)
+  - At least one source-type ticked per Source N block (or no Source N)
+  - Advanced sections: defaults applied if not customized
 
-  Missing critical fields → AI stops with a list. Missing nice-to-have → defaults applied.
+  Missing critical → AI stops with a list. Missing nice-to-have → defaults applied silently.
 -->

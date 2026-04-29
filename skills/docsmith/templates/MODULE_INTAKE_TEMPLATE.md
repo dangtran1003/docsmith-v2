@@ -2,14 +2,14 @@
   MODULE INTAKE — Per-module override of project-level config.
 
   This file is for ONE module/feature area within the project. It overrides
-  fields from documentation/intake/project.md when the same field is set here.
+  project.md when the same field is set here. Anything NOT specified here
+  inherits from project.md.
+
+  Sections marked "Advanced" are COLLAPSED by default. Most modules only
+  need to fill section 1 (identity) and section 2 (scope). Other sections
+  inherit from project automatically.
 
   Save and run /docsmith run <module-name> to generate docs for this module.
-
-  Layered config rules:
-   - Anything NOT specified here inherits from project.md
-   - Anything specified here OVERRIDES project.md for this module
-   - Sources are CUMULATIVE: project sources + module sources both used
 -->
 
 # Module Intake — `Module Name Here`
@@ -18,16 +18,11 @@
 
 - Module slug (lowercase, kebab-case): `your-module-slug`
 - Module display name: `Your Module Name`
-- Priority (1 = highest, 5 = lowest): `1`
-- Folder in target docs (relative to docs root): `your-module-slug`
+- Folder in target docs: `your-module-slug`  (defaults to slug)
 
 ## 2. Scope (*)
 
-### Features to document
-
-<!-- Copy "Feature N" block to add more. -->
-
-#### Feature 1
+### Feature 1
 
 - Feature name: `e.g., Create instance`
 - Content types needed:
@@ -35,9 +30,13 @@
   - [ ] How-to (task-focused, assumes context)
   - [ ] Reference (lookup tables, parameter lists)
   - [ ] Concept (explanation of how something works)
-- Priority within module: `1`
 
-#### Feature 2
+<details>
+<summary><b>Add more features</b> (skip if only 1 feature)</summary>
+
+Copy the "Feature N" block below for each additional feature. Increment N.
+
+### Feature 2
 
 - Feature name: ``
 - Content types needed:
@@ -45,38 +44,60 @@
   - [ ] How-to
   - [ ] Reference
   - [ ] Concept
-- Priority: ``
 
-### Out of scope (explicitly NOT documented in this module)
+### Feature 3
+
+- Feature name: ``
+- Content types needed:
+  - [ ] Tutorial
+  - [ ] How-to
+  - [ ] Reference
+  - [ ] Concept
+
+</details>
+
+<details>
+<summary><b>Out of scope</b> (optional — explicit "do NOT document" list)</summary>
+
+Things this module explicitly does NOT cover. Helps AI avoid hallucinating tangential content.
 
 `e.g., Internal admin features, deprecated v1 APIs`
 
-## 3. Voice override (optional)
+</details>
 
-<!--
-  Leave blank to inherit project-level voice settings.
-  Tick to override for this module only.
--->
+<details>
+<summary><b>Advanced — module priority</b> (default: 3)</summary>
+
+Priority within sitemap (1 = highest, 5 = lowest):
+
+`3`
+
+</details>
+
+<details>
+<summary><b>Advanced — voice override</b> (using project default)</summary>
+
+Most modules inherit project voice. Override only when this module needs different style (e.g., admin module wants formal while user module is casual).
 
 Override tone:
-- [ ] Inherit from project (default)
+- [x] Inherit from project (default)
 - [ ] Casual
 - [ ] Friendly-professional
 - [ ] Technical-direct
 - [ ] Formal
 
 Override perspective:
-- [ ] Inherit from project (default)
+- [x] Inherit from project (default)
 - [ ] Second-person
 - [ ] First-person plural
 - [ ] Third-person
 
-## 4. Module-specific knowledge sources
+</details>
 
-<!--
-  Sources here are ADDED to project-level sources for this module.
-  Useful when a module has its own PRD, design doc, or code area.
--->
+<details>
+<summary><b>Advanced — module-specific knowledge sources</b> (skip if none)</summary>
+
+Sources here ADD to project-level sources for this module. Useful when a module has its own PRD, design doc, or code area.
 
 ### Source 1
 
@@ -89,7 +110,6 @@ Override perspective:
 - URL or path or ID: ``
 - Name: ``
 - Auth env var (if private): ``
-- Notes: ``
 
 ### Source 2
 
@@ -102,13 +122,17 @@ Override perspective:
 - URL or path or ID: ``
 - Name: ``
 - Auth env var: ``
-- Notes: ``
 
-## 5. Walkthrough setup
+</details>
 
-Test account: inherit from project intake (default)
-- [ ] Yes, inherit
-- [ ] No, override (specify env vars):
+<details>
+<summary><b>Advanced — walkthrough setup</b> (using project credentials)</summary>
+
+Most modules use project credentials. Override when this module needs different test account.
+
+Test account:
+- [x] Inherit from project (default)
+- [ ] Override:
   - Username env var: ``
   - Password env var: ``
 
@@ -126,75 +150,93 @@ Post-walkthrough teardown (optional):
 # mycloud instance delete test-vm
 ```
 
-## 6. Special handling
+</details>
+
+<details>
+<summary><b>Advanced — special handling</b> (skip if none)</summary>
 
 Sensitive fields to redact in screenshots:
-- [ ] None
+- [x] None (default)
 - [ ] User email addresses
 - [ ] API keys / tokens (any visible)
 - [ ] Account IDs
 - [ ] Custom: ``
 
 Module status:
-- [ ] Active (will be processed by /docsmith run)
+- [x] Active (default — processed by /docsmith run)
 - [ ] Paused (skip in /docsmith run, kept for later)
 - [ ] Archived (do not process; do not delete from target on deploy --sync-deletes)
 
-## 7. Sitemap sections (v1.5.4+)
+</details>
 
-<!--
-  Tick which canonical section types this module includes. AI will follow the
-  project's sitemap pattern when ordering them. See:
-  templates/SITEMAP_PATTERNS_TEMPLATE.md for what each section type means.
+<details>
+<summary><b>Advanced — sitemap sections for this module</b> (using project pattern)</summary>
 
-  When you run /docsmith plan, AI checks this against the project pattern and
-  warns about missing sections (e.g., if project pattern A includes
-  'troubleshooting' but you didn't tick it here, AI suggests adding it).
--->
+Project pattern (A/B/C from project.md § 6) determines section ORDER. This list determines which sections this module INCLUDES. AI auto-suggests sections based on your scope above; you can adjust here.
 
 For this module, include:
+- [x] overview          (always required — auto-ticked)
+- [x] initial-setup     (default — auto-ticked; untick if no specific setup)
+- [x] quickstarts       (auto-ticked if any feature has tutorial or how-to)
+- [ ] tutorials         (auto-ticked if any feature has tutorial content type)
+- [ ] guides            (alternative to quickstarts — pick one based on project pattern)
+- [ ] concepts          (only if non-obvious concepts to explain)
+- [ ] dashboard         (only if module has dashboard or report view)
+- [x] reference         (auto-ticked if any feature has reference content type)
+- [ ] api-reference     (only if module has stable API)
+- [ ] glossary          (auto-ticked if module has domain-specific terms)
+- [x] troubleshooting   (default — auto-ticked)
 
-- [ ] overview          (always required — auto-ticked even if you forget)
-- [ ] initial-setup     (skip if module needs no specific setup beyond project-level)
-- [ ] quickstarts       (group of short task-focused docs, 5-10 mins each)
-- [ ] tutorials         (group of step-by-step learning docs with hand-holding)
-- [ ] guides            (group of how-tos; alternative to quickstarts — pick one based on project pattern)
-- [ ] concepts          (explanation docs for non-obvious concepts)
-- [ ] dashboard         (only if module has a dedicated dashboard or report view)
-- [ ] reference         (parameter tables, schema specs, lookup docs)
-- [ ] api-reference     (only if module has a stable API)
-- [ ] glossary          (term definitions specific to this module)
-- [ ] troubleshooting   (common issues and fixes for this module)
-
-### Display name overrides for this module (optional)
-
-<!--
-  Override how section names appear on the module's nav. Leave empty to use
-  project-level default (which itself defaults to canonical names).
--->
-
+Display name overrides for this module (rare — usually inherit project):
 - overview: ``
 - initial-setup: ``
 - quickstarts: ``
 - tutorials: ``
 - guides: ``
-- concepts: ``
-- dashboard: ``
 - reference: ``
-- api-reference: ``
 - glossary: ``
 - troubleshooting: ``
+
+</details>
+
+<details>
+<summary><b>Advanced — media override</b> (using project defaults)</summary>
+
+Most modules inherit project media policy. Override only when this module is fundamentally different (compliance needs human voiceover, mobile module needs different aspect ratio, etc.).
+
+Screenshot density:
+- [x] Inherit from project (default)
+- [ ] Override per content type:
+  - Tutorial: ``
+  - How-to: ``
+  - Reference: ``
+
+Video density:
+- [x] Inherit from project (default)
+- [ ] Skip videos for this module entirely
+- [ ] Override per content type:
+  - Tutorial: ``
+  - How-to: ``
+
+Per-locale screenshots (this module only):
+- [x] Inherit from project (default)
+- [ ] Force per-locale capture (UI varies significantly across locales)
+- [ ] Force source-only (UI identical across locales — skip per-locale)
+
+Voiceover (this module only):
+- [x] Inherit from project (default)
+- [ ] Skip voiceover (silent only, even if project has AI voice)
+- [ ] Override TTS voice ID for this module: ``
+
+</details>
 
 ---
 
 <!--
   Validation when /docsmith run <module> triggers:
-  - Module slug, display name, folder set
-  - At least one feature with at least one content type checked
-  - At least one persona either inherited from project or specified here
-  - At least one sitemap section ticked (overview is auto-added if missing)
-  - Sections ticked are valid canonical types (per SITEMAP_PATTERNS_TEMPLATE)
+  - Module identity fields filled
+  - At least 1 feature with at least 1 content type checked
+  - Advanced sections: defaults applied or inherited from project if not customized
 
-  Missing critical → stop. Missing nice-to-have → AI infers from project intake or applies defaults.
-  Sitemap inconsistencies (e.g., missing section that project pattern includes) → WARN, not stop.
+  Missing critical → stop. Missing advanced → inherit from project intake.
 -->

@@ -3,6 +3,203 @@
 All notable changes to this skill are documented in this file.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Semantic Versioning](https://semver.org/).
 
+## [1.5.6] - 2026-04-29
+
+Smart defaults UX patch — collapse advanced sections by default in intake forms. Same fields, same parsing logic, just less visual noise for BAs.
+
+### Why
+
+After v1.5.5, intake templates accumulated to 356 lines (project) + 245 lines (module) with 71 + 41 checkboxes. BAs filling first project felt overwhelmed. They didn't need to see TTS provider list, sitemap pattern selection, or 6 other Advanced fields when defaults work for 80% of cases.
+
+Solution: wrap Advanced sections in HTML `<details>` blocks. GitHub/VS Code/Cursor render these as collapsed clickable headers. BA sees ~80 lines top-level (essentials only). Power user clicks to expand and customize.
+
+No new fields, no new logic, no new commands. Pure UX.
+
+### Changed
+
+- **`PROJECT_INTAKE_TEMPLATE.md`** — wrapped 7 Advanced sections in `<details>` blocks:
+  - Secondary personas (under § 2 Audience)
+  - Glossary settings (under § 3 Languages)
+  - Collision behavior (under § 4 Deploy)
+  - Voice and tone (separated from § 4)
+  - MFA / SSO (under § 5 Credentials)
+  - Additional sources (under § 6 Knowledge sources)
+  - Auto-run behavior, Sitemap pattern, Media policy (whole top-level sections)
+- **`MODULE_INTAKE_TEMPLATE.md`** — wrapped 7 Advanced sections in `<details>` blocks:
+  - Add more features (under § 2 Scope)
+  - Out of scope, Module priority (under § 2)
+  - Voice override
+  - Module-specific sources
+  - Walkthrough setup
+  - Special handling (sensitive fields, status)
+  - Sitemap sections, Media override
+- **`intake-reference.md` § 1** — added subsection explaining `<details>` parsing rule (AI strips wrapper, parses content, treats collapsed defaults as canonical)
+- **`INTAKE_GUIDE.md` and `.vi.md`** — added "Rule 4: Skip Advanced sections" with explicit minimum-fill checklist for first project (only § 1, 2, 3, 4, 5, 6 essentials)
+
+### Default tick state
+
+All Advanced sections have defaults pre-ticked. Examples:
+
+```markdown
+<details>
+<summary><b>Advanced — voice and tone</b> (using defaults)</summary>
+
+Tone:
+- [ ] Casual
+- [x] Friendly-professional (default)
+- [ ] Technical-direct
+- [ ] Formal
+
+</details>
+```
+
+When BA leaves Advanced section collapsed, AI uses ticked default. When BA expands and changes a tick, AI uses new value. Same parsing, no special-case logic.
+
+### Visual impact
+
+Before v1.5.6 in default GitHub render:
+- Project intake: ~356 lines all visible. BA scrolls through every section.
+- Module intake: ~245 lines all visible.
+
+After v1.5.6:
+- Project intake: ~80 lines essentials visible. 7 collapsed `<details>` headers indicate Advanced sections.
+- Module intake: ~50 lines essentials visible. 7 collapsed `<details>` headers.
+
+Total file size barely changed (354 / 242 lines now). Perceived complexity dropped ~75%.
+
+### Editor compatibility
+
+| Editor | Renders `<details>` collapsed? |
+|---|---|
+| GitHub web preview | ✅ Yes |
+| VS Code markdown preview | ✅ Yes |
+| Cursor | ✅ Yes |
+| GitHub.dev | ✅ Yes |
+| Plain text editor | ❌ Shows raw markup (still readable) |
+
+For editors that don't render `<details>`, BA sees `<details>` and `<summary>` tags as plain text. Not ideal but parseable. AI still parses correctly regardless of editor rendering.
+
+### Migration from v1.5.5
+
+For new projects: just use v1.5.6. New init scaffolds collapsed templates.
+
+For existing v1.5.5 workspaces:
+- Existing intake files keep flat structure — no `<details>` wrapping
+- AI parser still works (it ignores `<details>` whether present or not)
+- To convert existing intake to collapsed form, run `/docsmith init --reformat-intake`
+  - Re-renders project.md / modules/*.md with `<details>` wrappers
+  - User content (filled values, ticked checkboxes) preserved
+  - Backup at `documentation/intake/.backup-pre-v1.5.6/`
+
+OR just leave existing intakes as-is. Both render correctly; only new projects benefit from collapsed default.
+
+### Why this is a patch (not minor)
+
+No schema changes, no new fields, no new commands, no new templates. Pure markup change to existing templates. Plugin functionality identical to 1.5.5.
+
+## [1.5.5] - 2026-04-28
+
+Comprehensive media policy — screenshot density rules, per-locale strategy, video voiceover/TTS configuration, subtitle generation.
+
+### Why
+
+User raised real gap: docsmith had screenshot caption rules and video markers but no policy for:
+- How many screenshots per content type (density)
+- Style options (viewport, full window, cropped, annotated)
+- Aspect ratio (desktop, mobile, square)
+- Per-locale screenshot strategy (1 EN ảnh dùng chung hay capture riêng cho VI/JP?)
+- Video density per content type
+- Voiceover language strategy (silent? AI per locale? human?)
+- TTS provider abstraction
+- Subtitle generation method
+
+These decisions affect cost/effort by 3-10× depending on choice. Can't be inferred — must be explicit project decision.
+
+### Added
+
+- **`templates/MEDIA_POLICY_TEMPLATE.md`** — definitive reference covering:
+  - Screenshot density per content type (Tutorial=1/step, How-to=1/heading, etc.)
+  - 4 screenshot styles (viewport-only, full-window, cropped-element, annotated)
+  - 5 aspect ratios (16:9 desktop default, 4:3, mobile, square, custom)
+  - 3 per-locale strategies (source-only default, per-locale, hybrid)
+  - Video density rules with length caps per content type (Tutorial ≤90s, How-to ≤30s, etc.)
+  - 5 voiceover strategies (silent default, AI per locale, source+sub, human, none)
+  - 6 TTS providers with config schemas (local-piper default, local-coqui, openai, elevenlabs, google-cloud, azure-cognitive)
+  - 3 subtitle generation methods (auto from script, STT, manual)
+  - Sidecar vs burn-in caption packaging
+  - Cost estimation tables (default vs premium config)
+  - Migration guide
+- **Project intake § 11 "Media policy"** — full media config block in PROJECT_INTAKE_TEMPLATE
+- **Module intake § 8 "Media override"** — per-module overrides for screenshot density, video density, per-locale forcing, voiceover override
+- **TTS provider install instructions** in SETUP.md / SETUP.vi.md (Piper, Coqui, OpenAI, ElevenLabs, Google Cloud, Azure)
+- **Whisper STT install** for human voiceover subtitle generation
+- **INTAKE_GUIDE en/vi § 11** explanation for BAs (decision matrix, cost reality check)
+- **INTAKE_GUIDE en/vi § 8** explanation of module media override common cases
+
+### Changed
+
+- **`walkthrough` command** — respects screenshot density rules and per-locale strategy from project intake § 11
+- **`record` command** — respects video density rules, length caps, voiceover strategy, TTS provider config; warns on length cap exceeded; checks TTS prerequisites
+- **`verify` command** — added check #11: media compliance (screenshots match density policy, videos within length caps, voiceover/subtitle files exist when expected)
+- **File organization** in SKILL.md — adds `documentation/videos/voiceover/` and `documentation/videos/subtitles/` paths; per-locale image namespace under `images/<module>/<locale>/`
+- **Project intake validation** — if "AI synthetic voice" selected, TTS provider must be selected; if non-local TTS, auth env var required
+- **Module intake validation** — media overrides reference valid content types and providers
+
+### Default decisions (designed for cheap-first, upgrade-later)
+
+| Config | Default | Reason |
+|---|---|---|
+| Screenshot per-locale | Source-only | 1× capture cost; note "EN UI" in translated docs |
+| Screenshot style | viewport-only | Clean for Docusaurus content |
+| Aspect ratio | 16:9 desktop (1280×720) | Standard |
+| Voiceover | Silent + on-screen captions | No TTS needed; multi-locale via text overlay |
+| TTS provider | local-piper | Free, offline, no API key |
+| Subtitle generation | Auto from script | Deterministic for Silent + AI voice strategies |
+| Subtitle packaging | Sidecar `.vtt` | Flexibility, smaller storage |
+
+User can upgrade strategy by re-editing project intake § 11 and re-running `walkthrough`/`record`. Existing media not regenerated unless explicit re-run.
+
+### Deferred (v1.5.5 limitations)
+
+- **Pixel-perfect annotation** for `annotated` style — requires manual edit (Figma, Photoshop)
+- **Video editing** — record produces single-take captures; no transitions, intros/outros
+- **Music library** — ambient music must be user-provided file
+- **Lip-sync verification** — when AI voice + screen capture, no check that timing matches
+- **Background blur** for general aesthetic (only for redaction)
+- **STT subtitle from voiceover audio** — works only with text-script paths in v1.5.5
+
+### Cost reality
+
+Default config (silent + source-only) for 3 locales × 5 modules × 30 docs:
+- ~1 hour total time, $0 TTS cost, ~65 MB storage
+
+Premium config (AI voice per locale + per-locale screenshots):
+- ~3 hours first run, ~$5-10 TTS cost, ~200 MB storage
+
+Documented explicitly in MEDIA_POLICY_TEMPLATE § 11 so users can budget.
+
+### Migration from v1.5.4
+
+For new projects: just use v1.5.5. Project intake template includes Media policy section.
+
+For existing v1.5.4 workspaces:
+```bash
+/docsmith plan --migrate-media
+```
+AI:
+1. Inspects existing screenshots and videos in workspace
+2. Proposes default config (silent + source-only screenshots + viewport-only style)
+3. User confirms or adjusts
+4. AI updates project intake § 11
+
+Existing screenshots and videos NOT regenerated. Only new captures from next walkthrough/record follow new policy.
+
+### Why this is a patch (not minor)
+
+1 new template (MEDIA_POLICY), 2 modified templates, 2 modified guide files, 2 modified setup files, 4 SKILL.md sections updated. No new commands. No schema-breaking changes. Behavior is additive: project intake without § 11 falls back to all-default media policy; module intake without § 8 inherits from project.
+
+Plugin functionality identical to 1.5.4 for projects that don't fill in the new sections.
+
 ## [1.5.4] - 2026-04-28
 
 Sitemap consistency feature — fixes navigation drift across modules.

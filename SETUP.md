@@ -195,6 +195,89 @@ Raw recordings can be large (10-50 MB per minute at 1080p). docsmith automatical
 
 Add `documentation/videos/raw/` to `.gitignore` if not already (docsmith init does this).
 
+### 6. TTS provider install (only if voiceover strategy = "AI synthetic voice")
+
+If your project intake § 11 selects "AI synthetic voice", install one of these TTS providers:
+
+#### Local Piper (default, recommended)
+
+```bash
+pip install piper-tts
+
+# Download voice models per locale you'll use
+# Browse models: https://github.com/rhasspy/piper/blob/master/VOICES.md
+piper --download-voice en_US-amy-medium
+piper --download-voice vi_VN-25hours_single-low
+piper --download-voice ja_JP-nemo-low
+```
+
+Verify:
+```bash
+echo "Hello world" | piper --model en_US-amy-medium --output_file test.wav
+```
+
+#### Local Coqui TTS
+
+```bash
+pip install TTS
+
+# List available models
+python -m TTS.bin.list_models
+
+# Test synthesis
+tts --text "Hello world" --model_name tts_models/en/vctk/vits --out_path test.wav
+```
+
+#### OpenAI TTS
+
+```bash
+export OPENAI_API_KEY="sk-..."
+# No install — uses HTTP API
+```
+
+#### ElevenLabs
+
+```bash
+export ELEVENLABS_API_KEY="..."
+# No install — uses HTTP API
+# Browse voices: https://api.elevenlabs.io/v1/voices
+```
+
+#### Google Cloud TTS
+
+1. Create GCP project, enable "Cloud Text-to-Speech API"
+2. Create service account, download JSON key
+3. Set:
+```bash
+export GOOGLE_APPLICATION_CREDENTIALS=/path/to/key.json
+```
+
+#### Azure Cognitive Services
+
+1. Create Azure Speech resource
+2. Set:
+```bash
+export AZURE_SPEECH_KEY="..."
+export AZURE_SPEECH_REGION="eastus"   # or your region
+```
+
+### 7. Subtitle generation (Whisper for STT, only if voiceover = human)
+
+If voiceover strategy is "Human recorded" AND you want auto subtitle generation, install Whisper:
+
+```bash
+pip install openai-whisper
+# Or for faster local inference:
+pip install faster-whisper
+```
+
+Verify:
+```bash
+whisper test.mp3 --model base --output_format vtt
+```
+
+Skip this if you'll provide `.vtt` files manually OR if voiceover is silent/AI (subtitles auto-generate from script in those cases).
+
 ---
 
 ## Environment variables for sources and credentials

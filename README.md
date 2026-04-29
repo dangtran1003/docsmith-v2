@@ -130,6 +130,21 @@ cd ~/my-docusaurus-site
 /docsmith deploy
 ```
 
+## What's new in 1.5.6
+
+- **Collapsed Advanced sections** in intake forms. BA mới thấy ~80 dòng essentials thay vì 356 dòng (project) hay 245 dòng (module). Click để expand khi cần customize.
+- **Same fields, same parsing, no new commands** — pure UX patch. AI parser ignores `<details>` wrappers.
+- **INTAKE_GUIDE Rule 4** — explicit minimum-fill checklist for first project: chỉ điền 6 essential sections, skip mọi Advanced.
+
+## What's new in 1.5.5
+
+- **Comprehensive media policy** — screenshot density per content type, style options, aspect ratio, per-locale strategy. Video density, length caps, voiceover strategy (Silent / AI per locale / source+sub / human), 6 TTS providers (local-piper default, ElevenLabs, OpenAI, Google, Azure, Coqui), subtitle generation.
+- **Per-module media override** — modules can override project-wide media policy.
+- **TTS provider abstraction** — pick via project intake; install instructions in SETUP.md.
+- **`verify` check #11** — media compliance: density rules, length caps, voiceover/subtitle file existence.
+- **Cost transparency** — explicit cost estimates so users can budget (default config = ~$0; premium = ~$5-10 per cycle).
+- New template: `MEDIA_POLICY_TEMPLATE.md`.
+
 ## What's new in 1.5.4
 
 - **Sitemap consistency**: 3 project-level patterns (Learning path / Task-first / Custom) + 11 canonical section types. Fixes navigation drift across modules — was a real problem where module A had "Quick Starts → Tutorials" while module B had "Guides → Reference → Glossary".
