@@ -3,6 +3,81 @@
 All notable changes to this skill are documented in this file.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Semantic Versioning](https://semver.org/).
 
+## [1.5.7] - 2026-04-29
+
+Per-video script files. Voiceover content lives in dedicated script files instead of inline VIDEO marker comments.
+
+### Why
+
+After v1.5.5 added voiceover/TTS, the question "where do scripts live?" was unresolved. Inline scripts in VIDEO markers (the implicit assumption) had problems:
+- Bloated drafts (VIDEO marker with 40-line script comment)
+- Hard to translate scripts independently of prose
+- Multi-locale scripts had no clear home
+
+v1.5.7 externalizes scripts to per-video files at `documentation/scripts/<module>/<id>.md`.
+
+### Added
+
+- **`templates/VIDEO_SCRIPT_TEMPLATE.md`** — definitive format for per-video script files:
+  - Frontmatter: id, module, asset_path, duration_target, voiceover_strategy, voiceover_provider, source_locale, generation timestamp
+  - `# Source script (<lang>)` section: BA-edited source-language script
+  - `## <locale>` sections: per-locale translations (auto-managed by translate command)
+  - `# Notes` section: internal notes, NOT voiced, NOT translated
+  - Workflow integration with `record` and `translate` commands
+  - Multi-locale strategy mapping (silent, AI per-locale, source+sub, human)
+  - Path mapping table for source script + audio files + subtitles
+- **`/docsmith record --check`** flag — validate script files exist for all VIDEO markers
+- **`/docsmith record --re-record <id>`** flag — force re-record one video
+- **`/docsmith record --migrate-scripts`** flag — extract inline scripts from old VIDEO markers, create new script files, simplify markers
+
+### Changed
+
+- **VIDEO marker simplified to** `<!-- VIDEO id: <id> -->` only. All other config moved to script file frontmatter.
+- **Old expanded VIDEO marker syntax** still parsed by `record` for backward compatibility with v1.5.4-1.5.6 drafts. New drafts use simplified marker.
+- **`record` command workflow updated**:
+  1. Scan drafts for VIDEO markers
+  2. Look up script file at `documentation/scripts/<module>/<id>.md`
+  3. If missing → AI generates initial script from surrounding draft prose, pauses for user review
+  4. If exists but stale → warn user
+  5. User reviews/edits
+  6. TTS generates audio per locale (skipped if silent), capture screen, encode video
+- **`translate` command extended** to process script files alongside drafts. Translates `# Source script` content into `## <locale>` sections. Same per-block / batch review gate. Same glossary.
+- **VIDEO_MARKER_TEMPLATE.md** — added v1.5.7+ note at top about marker simplification
+- **MEDIA_POLICY_TEMPLATE § 5** — added reference to script files as voiceover content source
+- **translate-reference.md § 1** — clarifies what gets translated (drafts AND scripts)
+- **intake-reference.md path mapping table** — added rows for script file, voiceover audio, subtitle paths
+- **SKILL.md `record` command section** — full workflow update
+- **SKILL.md File organization** — adds `documentation/scripts/<module>/` directory
+- **INTAKE_GUIDE en/vi § 11** — added script file note in Videos section
+
+### Migration from v1.5.6
+
+For new projects: just use v1.5.7. `record` creates script files automatically when needed.
+
+For existing v1.5.6 workspaces with inline scripts in VIDEO markers:
+```bash
+/docsmith record --migrate-scripts
+```
+
+This:
+1. Scans drafts for inline-script VIDEO markers
+2. Creates `documentation/scripts/<module>/<id>.md` files from inline content
+3. Updates draft VIDEO markers to short form `<!-- VIDEO id: <id> -->`
+4. Backs up old drafts to `documentation/archive/<ts>/`
+
+For drafts without VIDEO markers: nothing to migrate.
+
+### Limitations (v1.5.7)
+
+- **No automatic script re-write** when draft prose changes — user manually updates scripts. v1.6+ may add change detection with diff suggestions.
+- **No SSML support** — TTS providers that support SSML (pause, emphasis, prosody) accept full markdown but ignore SSML tags. Adding SSML passthrough is roadmap.
+- **No multiple voices per script** — entire script uses one voice per locale. Dialog-style scripts not supported.
+- **No audio mixing** — voiceover only, no background music or SFX in `record`. User can post-process video manually.
+
+### Why this is a patch (not minor)
+
+1 new template, 5 modified templates/references, 3 new flags on `record`. No new commands. No schema-breaking changes for new projects. Old VIDEO marker format still parses for backward compat. Plugin functionality identical to 1.5.6 for users who don't use video.
+
 ## [1.5.6] - 2026-04-29
 
 Smart defaults UX patch — collapse advanced sections by default in intake forms. Same fields, same parsing logic, just less visual noise for BAs.

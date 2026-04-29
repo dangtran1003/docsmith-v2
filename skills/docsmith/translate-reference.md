@@ -36,6 +36,21 @@ Power users can opt into `--auto-approve` for speed; v1.6.x will refine quality.
 
 ## 1. Translate workflow (high level)
 
+### What gets translated
+
+Starting v1.5.7, `translate` processes BOTH:
+
+- **Drafts**: `documentation/drafts/<source>/**/*.md` → `documentation/drafts/<target>/**/*.md`
+- **Video scripts**: `documentation/scripts/<module>/<asset-id>.md` — translates `# Source script` content into `## <locale>` sections within same file
+
+Same per-block / batch review gate applies. Same glossary (`documentation/standards/glossary.<locale>.yaml`).
+
+For script files specifically:
+- Source section is read as one logical block (or split by paragraph for per-block mode)
+- Translated content goes under `## <locale>` heading in the same file
+- Frontmatter is preserved verbatim
+- Notes section is NOT translated (internal-only)
+
 ```
 /docsmith translate MyProduct
        │

@@ -2,6 +2,28 @@
 
 This file documents the convention for embedding video specifications in draft documentation. The `record` command consumes these markers, produces video files, and replaces the markers with embed code.
 
+## v1.5.7+: marker simplified, script externalized
+
+Starting in v1.5.7, the marker contains ONLY the `id`. All script content (voiceover narration, multi-locale translations) lives in a separate file at:
+
+```
+documentation/scripts/<module>/<id>.md
+```
+
+See [VIDEO_SCRIPT_TEMPLATE.md](VIDEO_SCRIPT_TEMPLATE.md) for the script file format.
+
+### New simplified marker
+
+```markdown
+<!-- VIDEO id: instance-create-tour -->
+```
+
+That's it. All other config (duration, voiceover strategy, captions) is in the script file's frontmatter.
+
+The expanded marker syntax below is still parsed by `record` for backward compatibility with v1.5.4-1.5.6 drafts. New drafts should use the simplified marker.
+
+---
+
 ## When to include a video
 
 Videos are **optional**. They supplement screenshots and text, never replace them. Use a video only when one of the following applies:

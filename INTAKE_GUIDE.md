@@ -260,6 +260,8 @@ Controls how screenshots and videos are produced. Two parts: screenshots and vid
 - Reference: never
 - Concept: optional (≤2min for animations)
 
+**Script files (v1.5.7+)**: each video has its own script file at `documentation/scripts/<module>/<id>.md`. The voiceover (if any) reads from this file. Multi-locale scripts go under `## en`, `## vi`, `## jp` headings in the same file. AI generates the initial script from your draft when you first run `record`; you review and edit.
+
 **Voiceover strategy** is the biggest decision:
 
 - **Silent + on-screen captions** (default): no audio. Text overlays describe actions. Cheapest. Multi-locale just needs different on-screen text. Recommended for first try.

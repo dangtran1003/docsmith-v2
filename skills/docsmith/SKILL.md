@@ -302,7 +302,24 @@ Items marked `product-bug` tracked in `walkthrough/active-product-bugs.yaml` acr
 
 **Media policy**: respects video density rules, length caps, voiceover strategy, and TTS provider from project intake § 11 (and module intake § 8 overrides). Default behavior is "Silent + on-screen captions" (no audio, no TTS needed). See [templates/MEDIA_POLICY_TEMPLATE.md](templates/MEDIA_POLICY_TEMPLATE.md) § 4-7 for full options.
 
-Optional. Scans drafts for `<!-- VIDEO ... -->` markers and records short tutorial videos via browser screen recording. See [templates/VIDEO_MARKER_TEMPLATE.md](templates/VIDEO_MARKER_TEMPLATE.md) for marker syntax and [templates/WALKTHROUGH_VIDEO_PLAN_TEMPLATE.md](templates/WALKTHROUGH_VIDEO_PLAN_TEMPLATE.md) for capture plan.
+**Script files (v1.5.7+)**: each video has its own script file at `documentation/scripts/<module>/<id>.md`. Script contains source-language narration plus per-locale translations. Voiceover (TTS or human) reads from this file. See [templates/VIDEO_SCRIPT_TEMPLATE.md](templates/VIDEO_SCRIPT_TEMPLATE.md) for format.
+
+**Workflow**:
+
+1. Scan drafts for `<!-- VIDEO id: <id> -->` markers
+2. For each marker, look up `documentation/scripts/<module>/<id>.md`:
+   - If missing → AI generates initial script from surrounding draft prose, saves to file, pauses for user review
+   - If exists but stale (draft section changed >20%) → warn user
+3. User reviews/edits script file
+4. On confirm: TTS generates audio per locale (skipped if silent), capture screen, encode video
+5. Replace VIDEO marker with `<video>` embed; preserve marker as comment for re-record
+
+**Translate integration (v1.5.7+)**: `translate` command processes script files alongside drafts. Translates `# Source script` content into `## <locale>` sections in same file. Same per-block / batch review gate.
+
+**Flags**:
+- `--migrate-scripts` — for v1.5.6-or-earlier drafts: extract inline scripts from VIDEO markers, create new script files, simplify markers
+- `--check` — validate script files exist for all VIDEO markers; report missing/stale; no audio/video generation
+- `--re-record <id>` — force re-record of one video even if cached See [templates/VIDEO_MARKER_TEMPLATE.md](templates/VIDEO_MARKER_TEMPLATE.md) for marker syntax and [templates/WALKTHROUGH_VIDEO_PLAN_TEMPLATE.md](templates/WALKTHROUGH_VIDEO_PLAN_TEMPLATE.md) for capture plan.
 
 After recording: replaces marker with `<video>` embed, preserves marker as comment for re-record.
 
@@ -451,6 +468,10 @@ docsmith's footprint at the project root is **exactly one folder: `documentation
     │       ├── create-form-filled.png       # source-locale (default)
     │       └── vi/                          # per-locale override (when project = per-locale)
     │           └── create-form-filled.png
+    ├── scripts/                        # v1.5.7+: per-video scripts
+    │   └── instances/                  # = module.folder
+    │       ├── instance-create-tour.md      # source script + per-locale translations
+    │       └── auto-scaling-tour.md
     ├── videos/
     │   ├── raw/                        # Gitignored
     │   ├── instance-create-tour.mp4    # final video (silent default)

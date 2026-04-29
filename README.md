@@ -130,6 +130,14 @@ cd ~/my-docusaurus-site
 /docsmith deploy
 ```
 
+## What's new in 1.5.7
+
+- **Per-video script files** — voiceover content lives in dedicated files at `documentation/scripts/<module>/<id>.md`. Source language + per-locale translations under `## en` / `## vi` / `## jp` headings in same file.
+- **Simplified VIDEO marker** — `<!-- VIDEO id: <id> -->` only. All other config in script file frontmatter.
+- **`translate` extended** — now processes script files alongside drafts. Same review gate, same glossary.
+- **`record --migrate-scripts`** — extract inline scripts from v1.5.6 drafts, create new script files.
+- New template: `VIDEO_SCRIPT_TEMPLATE.md`.
+
 ## What's new in 1.5.6
 
 - **Collapsed Advanced sections** in intake forms. BA mới thấy ~80 dòng essentials thay vì 356 dòng (project) hay 245 dòng (module). Click để expand khi cần customize.

@@ -188,11 +188,16 @@ When `module.folder = instances` (defaulting from `module.slug = instances`), th
 | Source-locale drafts      | `documentation/drafts/<source-locale>/instances/<doc>.md`           |
 | Translated drafts         | `documentation/drafts/<target-locale>/instances/<doc>.md`           |
 | Screenshot folder         | `documentation/images/instances/<asset>.png`                        |
+| Video script (v1.5.7+)    | `documentation/scripts/instances/<asset-id>.md`                     |
+| Video file                | `documentation/videos/<asset-id>.mp4`                               |
+| Voiceover audio per locale| `documentation/videos/voiceover/<asset-id>.<locale>.mp3`            |
+| Subtitle per locale       | `documentation/videos/subtitles/<asset-id>.<locale>.vtt`            |
 | Test cases                | `documentation/walkthrough/test-cases/instances/<test>.md`          |
 | Drift reports             | `documentation/walkthrough/drift/<ts>/instances-*.md`               |
 | Run state                 | `documentation/.run-state/instances.yaml`                           |
 | Deploy target (Docusaurus)| `<deploy_target>/docs/instances/<doc>.md`                           |
 | Deploy target images      | `<deploy_target>/static/img/<product.slug>/instances/<asset>.png`   |
+| Deploy target videos      | `<deploy_target>/static/videos/<product.slug>/<asset-id>.mp4`       |
 | Deploy target i18n        | `<deploy_target>/i18n/<locale>/.../current/instances/<doc>.md`      |
 
 **Each module produces multiple docs** (tutorial, how-to, reference, concept). The `Features to document` section in module intake drives how many. Example for `instances` module with two features:

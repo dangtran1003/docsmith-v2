@@ -260,6 +260,8 @@ Quyết định cách screenshot và video được tạo ra. 2 phần: screensh
 - Reference: never
 - Concept: optional (≤2min cho animation)
 
+**Script files (v1.5.7+)**: mỗi video có script file riêng tại `documentation/scripts/<module>/<id>.md`. Voiceover (nếu có) đọc từ file này. Script multi-locale lưu dưới headings `## en`, `## vi`, `## jp` cùng file. AI generate script ban đầu từ draft của bạn khi chạy `record` lần đầu; bạn review và edit.
+
 **Voiceover strategy** là quyết định lớn nhất:
 
 - **Silent + on-screen captions** (default): không audio. Text overlay mô tả action. Rẻ nhất. Multi-locale chỉ cần text overlay khác. Recommend cho lần đầu.

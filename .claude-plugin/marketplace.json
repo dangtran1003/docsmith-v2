@@ -4,7 +4,7 @@
     "name": "dangtran1003"
   },
   "description": "docsmith — documentation skill with markdown intake forms, multi-locale translation, and Docusaurus deploy.",
-  "version": "1.5.6",
+  "version": "1.5.7",
   "repository": "https://github.com/dangtran1003/docsmith-v2",
   "license": "MIT",
   "plugins": [
@@ -12,7 +12,7 @@
       "name": "docsmith",
       "source": "./",
       "description": "Build documentation from filled markdown intake forms. Fetches from Notion/GitHub/GDrive/URL/files, drafts content, captures screenshots, translates to multiple locales, deploys to Docusaurus.",
-      "version": "1.5.6",
+      "version": "1.5.7",
       "author": {
         "name": "dangtran1003"
       },

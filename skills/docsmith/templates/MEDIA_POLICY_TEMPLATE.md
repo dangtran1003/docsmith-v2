@@ -152,6 +152,8 @@ docsmith warns when a `record` plan exceeds the cap; user can override but shoul
 
 User picks in project intake. Affects video production cost dramatically.
 
+**Source for voiceover content (v1.5.7+)**: voiceover audio (TTS or human) reads from per-video script files at `documentation/scripts/<module>/<asset-id>.md`. Scripts have source-language content + per-locale translations under `## <locale>` headings. See [VIDEO_SCRIPT_TEMPLATE.md](VIDEO_SCRIPT_TEMPLATE.md) for the script file format.
+
 ### Strategy A: Silent + on-screen captions (default in v1.5.5)
 
 - No audio track
