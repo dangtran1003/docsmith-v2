@@ -3,6 +3,89 @@
 All notable changes to this skill are documented in this file.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Semantic Versioning](https://semver.org/).
 
+## [1.5.8] - 2026-04-29
+
+Documentation refresh — inline hints in intake templates, concise guides for v1.5.7.
+
+### Why
+
+After 7 minor patches accumulating features (sitemap consistency, media policy, video scripts), the docs were stale and bloated:
+- README still described v1.5.0 quickstart
+- INTAKE_GUIDE was 516 lines duplicating template explanations
+- Templates required users to flip back and forth between template and guide
+- v1.5.7 video scripts feature wasn't reflected in user-facing guides
+
+Solution: put hints WHERE users need them (in templates), keep guides concise for context/decisions only.
+
+### Changed
+
+- **`templates/PROJECT_INTAKE_TEMPLATE.md`** — every field now has an inline `>` hint immediately below it explaining:
+  - What to put (with examples)
+  - When to skip
+  - How AI uses the value
+  - Common values for the field
+  - Header at top: minimum-fill instructions for first project
+- **`templates/MODULE_INTAKE_TEMPLATE.md`** — same inline-hint treatment. BA can fill module without consulting external guide.
+- **`README.md`** — refreshed for v1.5.7:
+  - Quick start uses current command flow (`init` → `module` → fill → `run` → `continue` → `deploy`)
+  - "All commands at a glance" table (20 commands)
+  - "Key concepts" section explains layered config, re-run safety, drift detection, source change detection, multi-locale, sitemap consistency, media policy, video scripts
+  - "What gets generated" section shows full output tree
+  - "Documentation map" routes users to right doc by question
+  - File structure reflects plugin marketplace layout
+- **`INTAKE_GUIDE.md`** — rewritten as decision/context guide, not field reference (templates do that now):
+  - Three editing rules
+  - Minimum-fill checklist
+  - 7 common patterns with concrete commands
+  - Decision matrix tables for voiceover, screenshots, TTS provider
+  - "AI uses each field for..." reference table
+  - Mistake recovery table
+  - When to expand Advanced sections
+  - 7 tips for first-time success
+  - Reduced from 516 lines to 258 lines (-50%)
+- **`INTAKE_GUIDE.vi.md`** — full Vietnamese translation, same structure
+
+### Benefits
+
+For BAs filling intake first time:
+- Open template → every field has explanation right there
+- Don't need to flip to INTAKE_GUIDE
+- INTAKE_GUIDE only consulted for decisions ("which voiceover strategy?")
+
+For experienced users:
+- Quick refresher in README "All commands at a glance"
+- Decision matrices in INTAKE_GUIDE for second-project tweaks
+- Reference docs (in skills/docsmith/) unchanged for deep technical lookups
+
+For maintainers (you):
+- Templates are self-documenting
+- When you add a new field, just add a `>` hint inline
+- Guide doesn't accumulate field descriptions over time
+
+### What didn't change
+
+- SETUP.md — already covered v1.5.5 TTS providers and v1.5.7 setup; unchanged
+- HOW_IT_WORKS.md — last updated v1.4.0 multi-locale; could use refresh but lower priority
+- Reference docs (intake-reference, deploy-reference, translate-reference, etc.) — technical detail, unchanged
+- Plugin schema — same
+- Commands — same (no new flags or behaviors)
+
+### Migration from v1.5.7
+
+For new projects: `init` scaffolds the new self-explaining templates.
+
+For existing projects with old templates:
+- Old templates still parse correctly (inline hints are markdown blockquotes, ignored by parser)
+- To upgrade existing intake files in place:
+  ```bash
+  /docsmith init --reformat-intake
+  ```
+  Re-renders project.md and modules/*.md with v1.5.8 inline hints. Your filled values preserved. Backup at `documentation/intake/.backup-pre-v1.5.8/`.
+
+### Why this is a patch (not minor)
+
+Pure documentation. No new commands, no new fields, no new templates, no schema changes. Plugin functionality identical to 1.5.7.
+
 ## [1.5.7] - 2026-04-29
 
 Per-video script files. Voiceover content lives in dedicated script files instead of inline VIDEO marker comments.

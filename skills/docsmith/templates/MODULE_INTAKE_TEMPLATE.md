@@ -1,35 +1,57 @@
 <!--
-  MODULE INTAKE — Per-module override of project-level config.
+  MODULE INTAKE — Configures ONE feature area within the project.
 
-  This file is for ONE module/feature area within the project. It overrides
-  project.md when the same field is set here. Anything NOT specified here
-  inherits from project.md.
-
-  Sections marked "Advanced" are COLLAPSED by default. Most modules only
-  need to fill section 1 (identity) and section 2 (scope). Other sections
-  inherit from project automatically.
-
-  Save and run /docsmith run <module-name> to generate docs for this module.
+  ┌─────────────────────────────────────────────────────────────────┐
+  │  HOW TO FILL THIS FILE                                          │
+  │                                                                 │
+  │  1. Tick a checkbox: [ ] → [x]                                  │
+  │  2. Fill a backtick field: `value here`                         │
+  │  3. Sections labeled "Advanced" are collapsed by default.       │
+  │     Most modules skip these — they inherit from project.md.     │
+  │                                                                 │
+  │  WHEN YOU'RE DONE: save the file, run /docsmith run <module>    │
+  │                                                                 │
+  │  FIRST MODULE? Fill ONLY sections 1-2. Inherit everything else  │
+  │  from project.md (defaults work for ~80% of cases).             │
+  └─────────────────────────────────────────────────────────────────┘
 -->
 
 # Module Intake — `Module Name Here`
 
-## 1. Module identity (*)
+## 1. Module identity (REQUIRED)
 
-- Module slug (lowercase, kebab-case): `your-module-slug`
+> Identifies this module in the sitemap, deploy paths, and runtime state.
+
+- Module slug: `your-module-slug`
+  > Lowercase, kebab-case. Matches the filename (this file should be `<slug>.md`).
+  > Example: `instances`, `storage`, `billing`.
+
 - Module display name: `Your Module Name`
-- Folder in target docs: `your-module-slug`  (defaults to slug)
+  > Human-readable name shown in navigation.
+  > Example: `Instances`, `Storage Volumes`, `Billing & Invoices`.
 
-## 2. Scope (*)
+- Folder in target docs: `your-module-slug`
+  > Where this module's docs go in the published site. Defaults to slug.
+  > Override only if you want a different URL than the slug.
+  > Example: slug `auto-scaling` → folder `autoscaling` (no hyphen).
+
+## 2. Scope (REQUIRED)
+
+> What features does this module document?
 
 ### Feature 1
 
 - Feature name: `e.g., Create instance`
+  > What users will look up. The user-facing name of the feature.
+  > Example: `Auto-scaling`, `IP allocation`, `Tag management`.
+
 - Content types needed:
-  - [ ] Tutorial (learning-focused, hand-holding)
+  - [ ] Tutorial (learning-focused, hand-holding, beginner-friendly)
   - [ ] How-to (task-focused, assumes context)
   - [ ] Reference (lookup tables, parameter lists)
   - [ ] Concept (explanation of how something works)
+  > Tick one OR MORE. Each tick = one doc generated.
+  > Example: tick Tutorial + How-to → AI creates 2 docs (`create-instance-tutorial.md` + `create-instance.md`).
 
 <details>
 <summary><b>Add more features</b> (skip if only 1 feature)</summary>
@@ -59,7 +81,7 @@ Copy the "Feature N" block below for each additional feature. Increment N.
 <details>
 <summary><b>Out of scope</b> (optional — explicit "do NOT document" list)</summary>
 
-Things this module explicitly does NOT cover. Helps AI avoid hallucinating tangential content.
+> Helps AI avoid hallucinating tangential content. Free-form prose.
 
 `e.g., Internal admin features, deprecated v1 APIs`
 
@@ -68,7 +90,7 @@ Things this module explicitly does NOT cover. Helps AI avoid hallucinating tange
 <details>
 <summary><b>Advanced — module priority</b> (default: 3)</summary>
 
-Priority within sitemap (1 = highest, 5 = lowest):
+> Used to order modules in the sitemap. 1 = highest priority (appears first), 5 = lowest.
 
 `3`
 
@@ -77,7 +99,7 @@ Priority within sitemap (1 = highest, 5 = lowest):
 <details>
 <summary><b>Advanced — voice override</b> (using project default)</summary>
 
-Most modules inherit project voice. Override only when this module needs different style (e.g., admin module wants formal while user module is casual).
+> Most modules inherit project voice. Override only when this module needs different style (e.g., admin module wants formal while user module is casual).
 
 Override tone:
 - [x] Inherit from project (default)
@@ -97,7 +119,7 @@ Override perspective:
 <details>
 <summary><b>Advanced — module-specific knowledge sources</b> (skip if none)</summary>
 
-Sources here ADD to project-level sources for this module. Useful when a module has its own PRD, design doc, or code area.
+> Sources here ADD to project-level sources for this module. Useful when a module has its own PRD, design doc, or code area not relevant to other modules.
 
 ### Source 1
 
@@ -128,7 +150,7 @@ Sources here ADD to project-level sources for this module. Useful when a module 
 <details>
 <summary><b>Advanced — walkthrough setup</b> (using project credentials)</summary>
 
-Most modules use project credentials. Override when this module needs different test account.
+> Most modules use project credentials. Override when this module needs a different test account (admin features require admin login).
 
 Test account:
 - [x] Inherit from project (default)
@@ -139,14 +161,14 @@ Test account:
 Pre-walkthrough setup script (optional, runs before browser session):
 
 ```bash
-# Example: create test data
+# Example: create test data the walkthrough needs
 # mycloud instance create --name test-vm --image ubuntu-22.04
 ```
 
 Post-walkthrough teardown (optional):
 
 ```bash
-# Example: clean up
+# Example: clean up test data
 # mycloud instance delete test-vm
 ```
 
@@ -161,6 +183,7 @@ Sensitive fields to redact in screenshots:
 - [ ] API keys / tokens (any visible)
 - [ ] Account IDs
 - [ ] Custom: ``
+> Redacted fields get visual placeholder over them in screenshots.
 
 Module status:
 - [x] Active (default — processed by /docsmith run)
@@ -170,13 +193,13 @@ Module status:
 </details>
 
 <details>
-<summary><b>Advanced — sitemap sections for this module</b> (using project pattern)</summary>
+<summary><b>Advanced — sitemap sections for this module</b> (using project pattern + auto-detected)</summary>
 
-Project pattern (A/B/C from project.md § 6) determines section ORDER. This list determines which sections this module INCLUDES. AI auto-suggests sections based on your scope above; you can adjust here.
+> Project pattern (A/B/C from project.md) determines section ORDER. This list determines which sections this module INCLUDES. AI auto-suggests based on your scope above; adjust if needed.
 
 For this module, include:
 - [x] overview          (always required — auto-ticked)
-- [x] initial-setup     (default — auto-ticked; untick if no specific setup)
+- [x] initial-setup     (auto-ticked — untick if no specific setup needed)
 - [x] quickstarts       (auto-ticked if any feature has tutorial or how-to)
 - [ ] tutorials         (auto-ticked if any feature has tutorial content type)
 - [ ] guides            (alternative to quickstarts — pick one based on project pattern)
@@ -202,7 +225,8 @@ Display name overrides for this module (rare — usually inherit project):
 <details>
 <summary><b>Advanced — media override</b> (using project defaults)</summary>
 
-Most modules inherit project media policy. Override only when this module is fundamentally different (compliance needs human voiceover, mobile module needs different aspect ratio, etc.).
+> Most modules inherit project media policy. Override only when this module is fundamentally different.
+> Examples: compliance module needs human voiceover, mobile module needs different aspect ratio.
 
 Screenshot density:
 - [x] Inherit from project (default)
@@ -221,12 +245,12 @@ Video density:
 Per-locale screenshots (this module only):
 - [x] Inherit from project (default)
 - [ ] Force per-locale capture (UI varies significantly across locales)
-- [ ] Force source-only (UI identical across locales — skip per-locale)
+- [ ] Force source-only (UI identical across locales — skip per-locale even if project does it)
 
 Voiceover (this module only):
 - [x] Inherit from project (default)
 - [ ] Skip voiceover (silent only, even if project has AI voice)
-- [ ] Override TTS voice ID for this module: ``
+- [ ] Override TTS voice ID for this module: ``  (e.g., a more formal voice for compliance)
 
 </details>
 
