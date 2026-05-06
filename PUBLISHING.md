@@ -96,7 +96,7 @@ Both forms ask for the GitHub repository URL. They review the marketplace.json +
 - Version lives in **3 places** that must match:
   - `.claude-plugin/marketplace.json` → `version` and `plugins[0].version`
   - `.claude-plugin/plugin.json` → `version`
-  - Git tag (e.g., `v1.5.2`)
+  - Git tag (e.g., `v1.5.10`)
 - Changes documented in `CHANGELOG.md`
 - Follow [Semantic Versioning](https://semver.org/):
   - **Patch** (1.5.x): bug fixes, doc clarifications, template tweaks
@@ -107,9 +107,9 @@ Both forms ask for the GitHub repository URL. They review the marketplace.json +
 
 ```bash
 # After committing changes:
-git tag v1.5.2 -m "Release v1.5.2 — <one-line summary>"
+git tag v1.5.10 -m "Release v1.5.10 — <one-line summary>"
 git push origin main
-git push origin v1.5.2
+git push origin v1.5.10
 ```
 
 Marketplaces use the latest tag by default. Users running `/plugin marketplace update` get the new version.

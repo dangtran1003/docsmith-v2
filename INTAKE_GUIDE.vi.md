@@ -116,6 +116,65 @@ Defaults: batch review (whole-file diff), không cần glossary, source-only scr
    - Auth env var: `NOTION_TOKEN`
 5. `/docsmith run`
 
+### "Tôi đã có BA doc / PRD; không muốn gõ lại" (v1.5.9+)
+
+1. Lưu BA doc / PRD dưới dạng file local HOẶC có URL (Notion, GitHub, Google Drive)
+2. Chạy:
+   ```bash
+   /docsmith init --from-source path/to/ba-doc.md
+   # HOẶC
+   /docsmith init --from-source https://notion.so/abc123
+   ```
+3. AI đọc source, infer đa số field. Hỏi 5-10 câu cho field source không cover (target locales, deploy preset, credentials, voiceover).
+4. AI viết `project.md` với markers:
+   - Giá trị bình thường = direct fact từ source
+   - `← AI guess, please verify` = infer, có thể sai
+   - `← default applied` = source không có info, default conservative
+5. Mở `project.md`, scan tìm marker `← AI guess`, verify hoặc sửa
+6. (Tùy chọn) Chạy `module --from-source` cho mỗi module được detect
+7. Xong. `/docsmith run` như bình thường.
+
+Chi tiết: xem inference report tại `documentation/intake/.inference/<timestamp>-project.md` sau khi auto-fill.
+
+### "BA doc đã update; muốn refresh intake" (v1.5.9+)
+
+```bash
+/docsmith init --from-source path/to/ba-doc.md
+```
+
+(Cùng command như fill lần đầu.) AI:
+- Re-fetch source
+- So sánh với inference lần trước (per-field hash)
+- Chỉ re-infer field BA không edit manually
+- Show diff trước khi apply
+- Manual edit được giữ nguyên
+
+### "Source có module mới chưa documented" (v1.5.10+)
+
+```bash
+/docsmith update
+```
+
+AI so sánh source structure với workspace modules. Output:
+
+```
+Source có 7 modules. Workspace có 4.
+
+📋 Mới trong source (chưa documented):
+  [ ] billing — BA doc § 5
+  [ ] audit-logs — BA doc § 6
+  [ ] api-keys — BA doc § 7
+
+⚠️ Trong workspace, không có trong source:
+  - legacy-vpn — lần cuối trong source 2025-10
+
+Action: 1=tạo mới, 2=archive orphan, 3=cả hai, 4=show diff, 5=skip
+```
+
+Bạn chọn action, AI apply. Module mới được auto-fill từ source (giống `module --from-source`). Module orphan được mark `status: archived` — giữ lại cho git history, skip bởi `run`.
+
+Cho project có nhiều modules (>5 mới), AI MAY dùng parallel sub-agents để gen nhanh hơn. Sequential fallback nếu parallel không khả dụng. Xem SKILL.md § `update` chi tiết.
+
 ### "Update doc sau khi product UI đổi"
 
 1. `/docsmith walkthrough --check` — produce drift report

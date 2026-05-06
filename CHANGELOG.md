@@ -3,6 +3,246 @@
 All notable changes to this skill are documented in this file.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Semantic Versioning](https://semver.org/).
 
+## [1.5.11] - 2026-04-29
+
+Documentation refresh — sync top-level guides with v1.5.10.
+
+### Why
+
+After v1.5.10 added `update --from-source` module diff, parallel sub-agent guidance, and `--resume` flag, the top-level guides (HOW_IT_WORKS, COMPARISON) were stale:
+
+- HOW_IT_WORKS still showed v1.4.0-era pipeline (`.docsmithrc.yaml`, no source-driven intake, no script files)
+- COMPARISON compared v1.1 vs v1.5.1 (8 versions out of date)
+- PUBLISHING used v1.5.2 examples in version-bump instructions
+
+This patch refreshes top-level docs to match SKILL.md and the templates.
+
+### Changed
+
+- **`HOW_IT_WORKS.md`** — full rewrite for v1.5.10:
+  - 12 sections covering: 2-layer config model, 20 commands, init workflow, intake forms (manual + `--from-source`), full pipeline diagram, deploy, update with 3-layer change report, multi-locale, re-run protocol, mental model, daily cheat-sheet, troubleshooting
+  - Replaced `.docsmithrc.yaml` references with markdown intake form descriptions
+  - Added `--from-source` AI auto-fill workflow
+  - Added video script files (v1.5.7+) in record stage
+  - Added 11 troubleshooting rows (was 6 in v1.4)
+  - Added `--resume` flag mention
+- **`HOW_IT_WORKS.vi.md`** — full Vietnamese translation, mirrors English structure
+- **`COMPARISON.md`** — refresh to compare v1.1.0 vs v1.5.10:
+  - 5-phase chronological breakdown (initial → hardening → big refactor → UX polish → source-driven intake)
+  - Updated stats table (41 files, 9000 spec lines, etc.)
+  - Honest weaknesses list including "Real-world tested: never (16 versions, 0 production runs)"
+  - Self-assessment of methodology (user-driven ✓, untested ❌)
+  - "What I'd do differently if starting over" reflection
+- **`COMPARISON.vi.md`** — full Vietnamese translation
+- **`PUBLISHING.md`** — version examples updated to v1.5.10 (was v1.5.2)
+- **`README.md`** — current version bumped to 1.5.11
+
+### Unchanged
+
+- `INTAKE_GUIDE.md` / `.vi.md` — already refreshed in v1.5.8 + v1.5.9 + v1.5.10 patterns
+- `SETUP.md` / `.vi.md` — version-agnostic prerequisites guide
+- `CHANGELOG.md` — append-only
+- All template files — already reflect current behavior
+- All reference docs (`intake-reference.md`, etc.) — already current
+
+### Why this is a patch (not minor)
+
+Pure documentation. No new commands, no behavior changes, no schema changes, no new templates. Plugin functionality identical to 1.5.10.
+
+### Migration
+
+None needed.
+
+## [1.5.10] - 2026-04-29
+
+Multi-module operations — detect new/orphan modules in `update`, document parallel processing as MAY (not MUST).
+
+### Why
+
+User raised: with 30 modules at init time and 5 modules/week update cadence, two needs:
+
+1. **Missing module detection in update** — when BA doc has 7 modules but workspace only has 4, AI should surface the gap and offer to create the missing intakes
+2. **Multi-agent parallel processing** — for first-time init with 30 modules, sequential is slow
+
+For (1): real pain, clear solution. Implemented as feature.
+
+For (2): user described as "conceptual" — wanted parallel for future-proofing, not from felt pain. Implemented as documentation guidance ("AI MAY use Task tool when >5 modules") rather than mandatory parallel orchestration. Avoids over-promising performance the runtime may not deliver.
+
+### Added
+
+- **Module diff in `update`** — `update` (without flags) now also detects:
+  - **New modules in source** not yet in workspace
+  - **Orphan modules in workspace** no longer in source
+  - **Scope drift** — features in source vs features in module intake
+- **Interactive prompt for module diff** with 5 actions (create new / archive orphan / update scope / show diff only / skip)
+- **`update --from-source <path>`** — re-register source URL/path (overrides sources.lock entry)
+- **`update --no-modules`** — content drift only; skip module structure detection (faster for daily use)
+- **`update --resume`** and **`init --from-source --resume`** — retry previously failed parallel sub-agents (when last run reported partial completion)
+- **Update inference report** at `documentation/intake/.inference/<ts>-update.md` — same format as init inference report, scoped to update operation
+- **Parallel sub-agent guidance (Cấp 1)** in `intake-reference.md` § 9.9:
+  - Threshold >5 modules
+  - "MAY use Task tool" — not mandatory; runtime decides actual parallelism
+  - Sequential fallback always valid
+  - Error handling: failed sub-agent retried sequentially; if fails again → partial completion + `--resume` instructions
+  - Cost note: ~2× tokens for ~3× speed
+  - Benchmark guidance (rough estimates)
+- **Missing module detection (B)** documented in `intake-reference.md` § 9.10:
+  - 3-bucket categorization logic
+  - Interactive prompt format
+  - Re-run safety with hash protection
+  - Heuristic limitation flagged
+
+### Changed
+
+- **`update` command in SKILL.md** — workflow expanded to 7 steps (was 5); 3-layer change report (content drift + module diff + scope drift); inference report generation
+- **`init` command in SKILL.md** — added `--resume` flag for parallel partial-completion retry
+- **INTAKE_GUIDE en/vi** — added pattern "Source has new modules I didn't document yet" / "Source có module mới chưa documented"
+
+### Behavior nuances
+
+**Parallel is opportunistic, not guaranteed**:
+
+The skill spec uses "MAY" deliberately. Spawning sub-agents requires runtime support. If Claude runtime can't truly parallelize, sequential interleaving still works — just no speedup. User-facing outcome identical.
+
+**Threshold avoids overhead for small projects**:
+
+≤5 modules: sequential. Spawn overhead > sequential time.
+>5 modules: parallel attempted. Worth coordination cost.
+
+**Error handling preserves work**:
+
+If 4 of 5 sub-agents complete and 1 fails:
+- 4 module intakes written successfully
+- 1 module reported as failed
+- User can `--resume` to retry just the failed one
+- Re-run protocol prevents accidentally redoing successful ones
+
+**Orphan detection is heuristic**:
+
+If source restructured (renamed sections, merged modules), AI may flag valid modules as orphan. Interactive prompt always shows reasoning; user decides.
+
+### Limitations (v1.5.10)
+
+- **Parallel performance not guaranteed** — depends on Claude runtime
+- **No `--max-concurrent N` flag** — threshold and concurrency hardcoded; defer to v1.6+ if usage shows need
+- **Update inference report format same as init** — could differ (update should highlight diffs more prominently); defer minor templating
+- **Scope drift detection is feature-list level** — doesn't detect changes in feature description quality. AI compares feature names, not semantics
+- **Orphan detection conservative** — won't auto-archive; always asks user
+
+### Migration from v1.5.9
+
+For new projects: just use v1.5.10. New behavior is additive.
+
+For existing v1.5.9 projects: nothing to migrate. Run `/docsmith update` next time you check sources — will surface module diffs if any exist.
+
+### Why this is a patch (not minor)
+
+No new commands. New flags only (`--from-source`, `--no-modules`, `--resume` on update; `--resume` on init). Existing `update` workflow extended, not replaced. Plugin functionality identical to 1.5.9 for users with tightly synced sources (no module gap detected → no new behavior surfaced).
+
+## [1.5.9] - 2026-04-29
+
+AI auto-fill intake from source documents. BAs no longer have to type intake fields manually when they already have a BA doc / PRD.
+
+### Why
+
+User raised: "Việc điền intake này có require không, AI có thể tự điền và tôi review từ các nguồn khác (BA doc, doc hiện tại)."
+
+Realistic answer: the intake form was the ONLY way to configure docsmith, requiring BAs to manually transfer info from their existing BA doc into a 354-line form. This is duplicate work — the BA already wrote a doc explaining the product.
+
+v1.5.9 adds source-driven auto-fill: AI reads BA doc, infers fields, asks BA only for what source can't cover. Intake form remains source of truth (single audit trail), but BA reviews instead of types.
+
+### Added
+
+- **`/docsmith init --from-source <path-or-url>`** — AI auto-fills `project.md` from external source(s)
+- **`/docsmith module <n> --from-source <path-or-url>`** — AI auto-fills module intake from source, scoped to one module
+- **Inference confidence model** — every field marked one of:
+  - `Fact` (no marker — direct quote from source)
+  - `← AI guess, please verify` (inferred from context, BA should review)
+  - `← default applied` (no source data, conservative fallback)
+  - `Asked` (BA answered during interactive Q&A)
+- **Interactive Q&A flow** — after parsing source, AI asks 5-10 questions for fields source can't cover:
+  - Source language (confirm detection)
+  - Target languages
+  - Deploy preset and target path
+  - Walkthrough credentials env var names (if walkthrough used)
+  - Voiceover strategy (if videos planned)
+  - Pause gate preference for first run
+- **Module detection** from source structure (sections, headings) with user confirmation
+- **`templates/INTAKE_INFERENCE_REPORT_TEMPLATE.md`** — transparency report format:
+  - Frontmatter with metadata + confidence summary
+  - "Facts" table with field, value, source line, exact quote
+  - "Guesses" table with reasoning per guess
+  - "Defaults applied" with why each default
+  - "Asked user" with Q&A log
+  - "Open items" (still need user input)
+  - "Sources used" appendix
+  - Saved at `documentation/intake/.inference/<timestamp>-<scope>.md` (audit retained)
+- **Re-run safety with `--from-source`** — per-field hash check:
+  - Hash matches → BA didn't edit; safe to re-infer if source data changed
+  - Hash differs → BA edited manually; preserve current value
+  - Diff shown before applying; re-run protocol gate (Update / Overwrite / Skip)
+
+### Changed
+
+- **`init` command** — adds `--from-source` flag; existing flags unchanged
+- **`module` command** — adds `--from-source` flag for module-scoped auto-fill
+- **`intake-reference.md`** — new § 9 "Source-driven intake auto-fill" with:
+  - When to use / when not to use
+  - Inference confidence model explained
+  - Per-field inference logic (product, audience, languages, deploy, voice, credentials, sources, modules)
+  - Interactive Q&A flow with sample dialog
+  - Inference report format reference
+  - Re-run with `--from-source` and hash storage
+  - 5 limitations called out
+  - Full session example
+- **README Quick start** — step 3 and 4 now mention `--from-source` as alternative
+- **README current version** — bumped to 1.5.9
+- **INTAKE_GUIDE en/vi** — added 2 new patterns:
+  - "I have a BA doc / PRD already; don't want to re-type info"
+  - "BA doc updated; want to refresh intake"
+
+### Inference logic highlights
+
+| Field | Inference approach |
+|---|---|
+| `product.slug` / `display_name` | Slugify / extract from source heading |
+| `product.url` | Regex search for product URL (filter out github/notion/etc) |
+| `audience.tech_level` | Heuristic: CLI/API mentions → High; "non-technical" → Low; else Medium |
+| `audience.primary_goal` | Pattern match "users want to...", "the goal is..." — always marked guess |
+| `voice.tone` | Detect contractions/exclamations (casual) vs technical jargon (technical-direct) |
+| `voice.perspective` | Count dominant pronoun ("you" / "we" / "the user") |
+| `locales.source` | Script analysis (Vietnamese diacritics → vi, etc.) — always confirms with user |
+| `locales.targets` | Always asked — translation strategy is project decision |
+| `deploy.*` | Always asked — environment-specific |
+| `credentials.*` | Always asked — environment-specific |
+| `sitemap.pattern` | Default Pattern A unless source explicitly specifies different structure |
+| `media.*` | Always default — source rarely mentions |
+| Module detection | Top-level sections in source → candidate modules; user confirms |
+
+### Limitations (v1.5.9)
+
+- **Heuristic detection** — AI labels uncertain fields as "guess" but heuristics are imperfect. BAs should review every "← AI guess" marker.
+- **No deep code analysis** — source as GitHub repo: AI reads README and structure, not every function
+- **No semantic merge on re-run** — uses field-level hash. BA reformatting (whitespace, reorder) breaks hash and may prevent re-inference even when content unchanged
+- **No multi-source merge precedence** — passing 3 sources merges them as 3 inputs but AI may pick fields from one source over another with no user control. Defer to v1.6+
+- **Conservative defaults override source hints** — AI defaults to safest choice even when source hints at other strategies (e.g., source mentions "video tutorials" but media.voiceover defaults to silent). User overrides during Q&A or after.
+
+### Migration from v1.5.8
+
+For new projects: just use v1.5.9. Use `--from-source` if you have BA doc, omit if you'll fill manually.
+
+For existing projects: nothing to migrate. v1.5.8 intake files still work. Adding `--from-source` to existing projects:
+- Re-runs `init --from-source` on existing workspace
+- Per-field hash check preserves your manual edits
+- Diff shown before applying
+- Inference report logged
+
+### Why this is a patch (not minor)
+
+1 new template (INTAKE_INFERENCE_REPORT), 2 modified commands (added flags), 1 new reference section. No new commands. No schema-breaking changes. Existing workflow (manual intake fill) unchanged. `--from-source` is fully opt-in.
+
+For users who don't use `--from-source`, plugin functionality identical to 1.5.8.
+
 ## [1.5.8] - 2026-04-29
 
 Documentation refresh — inline hints in intake templates, concise guides for v1.5.7.

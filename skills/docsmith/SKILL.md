@@ -161,6 +161,41 @@ Print the command table above. No other action.
 - `--upgrade-from-1.4` — read existing `.docsmithrc.yaml` and pre-fill `project.md` from it; keep yaml for compat (deprecated)
 - `--force` — overwrite existing intake files (requires confirm)
 - `--in-place` — explicitly request in-place mode (skip prompt when in Docusaurus repo)
+- `--reformat-intake` — re-render existing intake files with current template (preserves filled values; backup at `.backup-pre-<version>/`)
+- `--from-source <path-or-url>` (v1.5.9+) — AI auto-fills intake from source document(s). Multiple sources comma-separated. See "From-source mode" below.
+- `--resume` (v1.5.10+) — retry previously failed parallel sub-agents from last `init --from-source` run with >5 modules. Only applicable when last run reported partial completion.
+
+#### From-source mode (v1.5.9+)
+
+Use `--from-source` to skip manual intake authoring. AI reads BA doc / PRD / existing docs, infers fields, and writes `project.md`. Workflow:
+
+1. **Fetch source(s)** using existing fetch logic (Notion / GitHub / GDrive / URL / file)
+2. **Infer fields** by category:
+   - **Facts** (high confidence): direct quotes from source — product name, audience role, module names, feature lists
+   - **Guesses** (medium confidence): inferred from context — primary goal, voice tone, scope details. Marked `← AI guess` in intake
+   - **Defaults** (no source data): conservative fallback per template default. Marked `← default applied`
+3. **Interactive Q&A** for fields that source doesn't cover:
+   - Source language (from BA doc language, but always asks to confirm)
+   - Target locales (translation strategy)
+   - Deploy preset and target path
+   - Walkthrough credentials (env var names)
+   - Voiceover strategy (if videos planned)
+   - Pause gate preference for first run
+4. **Write `project.md`** with inline `> Auto-filled from <source>: "<quote>"` annotations and `← AI guess` markers on uncertain fields
+5. **Detect modules** from source structure (sections, headings) and prompt user: "Create module intake for each? Y/N/select"
+6. **Generate inference report** at `documentation/intake/.inference/<timestamp>-project.md` (see [templates/INTAKE_INFERENCE_REPORT_TEMPLATE.md](templates/INTAKE_INFERENCE_REPORT_TEMPLATE.md))
+7. **Print summary**:
+   ```
+   ✓ Created project.md (8 facts, 4 guesses, 7 defaults, 3 asked)
+   ✓ Detected 2 modules: instances, storage
+   ⚠ 4 fields marked "← AI guess" — please verify before /docsmith run
+   📋 Inference report: documentation/intake/.inference/<timestamp>-project.md
+   ```
+
+**Re-run with `--from-source`** (when source updates):
+- Existing intake values that match AI's last inference → safe to re-infer
+- Existing intake values BA edited manually → preserved (hash check)
+- Show diff before applying. Re-run protocol gate (Update / Overwrite / Skip).
 
 ### `module` (AI)
 
@@ -169,11 +204,12 @@ Print the command table above. No other action.
 **Sub-commands**:
 
 ```
-/docsmith module <n>                       # create new module
-/docsmith module <n> --from <existing>     # clone from another module
-/docsmith module list                      # list modules with status
-/docsmith module archive <n>               # mark as archived (skip in run)
-/docsmith module unarchive <n>             # un-archive
+/docsmith module <n>                          # create new module
+/docsmith module <n> --from <existing>        # clone from another module
+/docsmith module <n> --from-source <path>     # AI auto-fill from source (v1.5.9+)
+/docsmith module list                         # list modules with status
+/docsmith module archive <n>                  # mark as archived (skip in run)
+/docsmith module unarchive <n>                # un-archive
 ```
 
 **Create behavior**:
@@ -181,8 +217,9 @@ Print the command table above. No other action.
 2. Copy `templates/MODULE_INTAKE_TEMPLATE.md` to that path
 3. Pre-fill module slug, display name from argument
 4. If `--from <existing>`: copy non-identity fields from `<existing>` (sources, voice override, etc.)
-5. Update project.md `Module intake files` section (between BEGIN/END MODULES LIST markers)
-6. Print: "Module '<n>' created. Edit and run `/docsmith run <n>` when ready."
+5. If `--from-source <path>`: AI auto-fills features and content types from source (same logic as `init --from-source` but scoped to one module). Generates inference report at `.inference/<timestamp>-<module>.md`. Asks user about scope when ambiguous: "Source mentions 'snapshot' under Storage — include in this module's scope? Y/N"
+6. Update project.md `Module intake files` section (between BEGIN/END MODULES LIST markers)
+7. Print: "Module '<n>' created. Edit and run `/docsmith run <n>` when ready."
 
 ### `intake-help` (—)
 
@@ -361,24 +398,37 @@ Glossary file (per locale): `documentation/standards/glossary.<locale>.yaml` ([t
 
 ### `update` (AI)
 
-**Purpose**: detect external source changes and propose draft updates without re-fetching everything.
+**Purpose**: detect external source changes and propose draft updates without re-fetching everything. As of v1.5.10, also detects new/orphan modules in source structure.
 
 **Workflow**:
 1. Read `sources.lock.yaml`
 2. For each source, do cheap metadata check (Notion edit time, GitHub commit SHA, GDrive revision, URL ETag, file mtime)
-3. Build change report
-4. User reviews; on confirm:
+3. Build change report (3 layers):
+   - **Content drift**: source content changed → affected drafts to re-evaluate
+   - **Module diff** (v1.5.10+): modules in source vs in workspace; categorize as new/orphan/scope-drift
+   - **Scope drift** (v1.5.10+): existing module's features list lags source
+4. User reviews via interactive prompt; picks actions
+5. On confirm:
    - Full-fetch changed sources
+   - Create new module intakes (with `--from-source` auto-fill)
+   - Archive orphan modules (`status: archived`)
+   - Update scope-drift module features
    - Re-run `draft` in Update mode for affected docs (KB inheritance)
    - Re-run `wt --check` for new drift
-5. Update lock file
+6. Update lock file
+7. Generate update inference report at `documentation/intake/.inference/<ts>-update.md`
 
-See [intake-reference.md](intake-reference.md) § "The `update` command — change detection".
+See [intake-reference.md](intake-reference.md) § 9.10 "Missing module detection" and § 5 "The `update` command — change detection".
+
+**Multi-module performance** (v1.5.10+): when ≥5 modules need processing (new + scope-drift combined), AI MAY use Task tool to spawn parallel sub-agents. Sequential fallback for ≤5 modules. See [intake-reference.md](intake-reference.md) § 9.9.
 
 **Flags**:
-- (no args) — check all modules
-- `<module>` — one module
-- `--auto-apply` — fetch and apply changes without prompt (CI use)
+- (no args) — check all sources from sources.lock; full diff (content + module structure)
+- `<module>` — one module only (skip module structure detection)
+- `--from-source <path>` — re-register a source URL/path (overrides sources.lock entry)
+- `--no-modules` — content drift only; skip module structure detection (faster)
+- `--auto-apply` — fetch and apply all changes without prompt (CI use)
+- `--resume` — retry previously failed parallel sub-agents (if last run had partial completion)
 
 ### `categorize` (AI) — Docusaurus categories
 

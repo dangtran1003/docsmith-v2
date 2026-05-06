@@ -116,6 +116,65 @@ Defaults: batch review (whole-file diff), no glossary required, source-only scre
    - Auth env var: `NOTION_TOKEN`
 5. `/docsmith run`
 
+### "I have a BA doc / PRD already; don't want to re-type info" (v1.5.9+)
+
+1. Save BA doc / PRD as local file OR have a URL (Notion, GitHub, Google Drive)
+2. Run:
+   ```bash
+   /docsmith init --from-source path/to/ba-doc.md
+   # OR
+   /docsmith init --from-source https://notion.so/abc123
+   ```
+3. AI reads source, infers most fields. Asks 5-10 questions for what source can't cover (target locales, deploy preset, credentials, voiceover).
+4. AI writes `project.md` with markers:
+   - Plain values = direct facts from source
+   - `← AI guess, please verify` = inferred, may be wrong
+   - `← default applied` = source had no info, conservative default
+5. Open `project.md`, scan for `← AI guess` markers, verify or correct
+6. (Optional) Run `module --from-source` per detected module
+7. Done. `/docsmith run` as usual.
+
+For full details: see inference report at `documentation/intake/.inference/<timestamp>-project.md` after auto-fill.
+
+### "BA doc updated; want to refresh intake" (v1.5.9+)
+
+```bash
+/docsmith init --from-source path/to/ba-doc.md
+```
+
+(Same command as initial fill.) AI:
+- Re-fetches source
+- Compares with last inference (per-field hash)
+- Only re-infers fields BA didn't manually edit
+- Shows diff before applying
+- Manual edits preserved
+
+### "Source has new modules I didn't document yet" (v1.5.10+)
+
+```bash
+/docsmith update
+```
+
+AI compares source structure with workspace modules. Output:
+
+```
+Source has 7 modules. Workspace has 4.
+
+📋 New in source (not yet documented):
+  [ ] billing — BA doc § 5
+  [ ] audit-logs — BA doc § 6
+  [ ] api-keys — BA doc § 7
+
+⚠️ In workspace, not in source:
+  - legacy-vpn — last in source 2025-10
+
+Action: 1=create new, 2=archive orphan, 3=both, 4=show diff only, 5=skip
+```
+
+You select actions, AI applies. New modules get auto-fill from source (same as `module --from-source`). Orphan modules marked `status: archived` — preserved for git history, skipped by `run`.
+
+For projects with many modules (>5 new), AI MAY use parallel sub-agents to speed up generation. Sequential fallback if parallel unavailable. See SKILL.md § `update` for details.
+
 ### "I want to update docs after the product UI changed"
 
 1. `/docsmith walkthrough --check` — produces drift report

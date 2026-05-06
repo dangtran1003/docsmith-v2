@@ -2,7 +2,7 @@
 
 A Claude Code skill that builds technical documentation from filled markdown intake forms. Drafts content, captures screenshots via browser walkthrough, generates voiceover videos, translates to multiple locales, and deploys to Docusaurus.
 
-**Current version**: 1.5.7 ([CHANGELOG](CHANGELOG.md))
+**Current version**: 1.5.11 ([CHANGELOG](CHANGELOG.md))
 
 > 🇻🇳 Tiếng Việt: [README.vi.md](README.vi.md) (coming soon — for now, [INTAKE_GUIDE.vi.md](INTAKE_GUIDE.vi.md) and [SETUP.vi.md](SETUP.vi.md) cover the basics)
 
@@ -46,6 +46,16 @@ mkdir my-product-docs && cd my-product-docs
 
 `init` creates the workspace folder structure and a project intake form pre-filled with detected values (slug from package.json, etc.).
 
+**OR auto-fill from BA doc / PRD (v1.5.9+)**:
+
+```bash
+/docsmith init --from-source documentation/sources/ba-doc.md
+# AI reads BA doc, infers fields, asks 5-10 questions, writes project.md
+# Marks uncertain fields with "← AI guess" for you to verify
+```
+
+Source can be local file, Notion URL, GitHub path, or Google Drive ID. See [INTAKE_GUIDE.md](INTAKE_GUIDE.md) § "Source-driven auto-fill" for details.
+
 ### 4. Add modules (per feature area)
 
 ```bash
@@ -54,6 +64,13 @@ mkdir my-product-docs && cd my-product-docs
 ```
 
 Each module is one feature area. Create as many as you need.
+
+**Auto-fill from source** (v1.5.9+):
+
+```bash
+/docsmith module instances --from-source documentation/sources/ba-doc.md
+# AI extracts features for "instances" from BA doc, fills module intake
+```
 
 ### 5. Fill the intake forms
 
@@ -98,10 +115,16 @@ git diff && git add . && git commit -m "Update docs" && git push
 
 ```bash
 /docsmith update                            # detects Notion/GitHub/GDrive changes
+                                            # AND new/orphan modules in source structure (v1.5.10+)
                                             # proposes targeted re-drafts of affected docs
 ```
 
-Cheap metadata calls (no full re-fetch) detect what changed. You review proposed deltas before re-drafting.
+Cheap metadata calls (no full re-fetch) detect what changed. Three-layer change report (v1.5.10+):
+- **Content drift**: source content changed → affected drafts to re-evaluate
+- **Module diff**: modules in source vs in workspace (new / orphan / scope drift)
+- **Scope drift**: existing module's features lag source
+
+You review proposed deltas before applying. For projects with many new modules (>5), AI MAY use parallel processing.
 
 ## All commands at a glance
 

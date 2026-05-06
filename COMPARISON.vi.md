@@ -1,267 +1,195 @@
-# So sánh v1.1.0 vs v1.5.1
+# So sánh: v1.1.0 vs v1.5.10
 
-So sánh giữa phiên bản đầu tiên (v1.1.0, ngày 26/04/2026) và phiên bản hiện tại (v1.5.1, cùng ngày). Mục đích: review xem có đổi quá nhiều, có giữ được tinh thần ban đầu, hay đã drift xa khỏi mục tiêu gốc.
+Self-review so sánh release đầu tiên (v1.1.0) với release hiện tại (v1.5.10). Mục đích: kiểm tra skill có thay đổi quá nhiều, drift khỏi original goals, hay grow scope hợp lý.
 
 > 🇬🇧 English version: [COMPARISON.md](COMPARISON.md)
 
 ## TL;DR
 
-**Số lượng**: tăng đáng kể (file +52%, dòng spec ước lượng +200%, command số tương đương nhưng functional rất khác).
+**Volume**: lớn hơn đáng kể (files +95%, spec lines +210%, commands +11% nhưng functionality khác hẳn).
 
-**Tinh thần**: giữ được — vẫn là PRC-010 process, vẫn AI-driven, vẫn focus chất lượng doc.
+**Spirit**: được giữ — vẫn PRC-010 process, vẫn AI-driven, vẫn focus chất lượng doc.
 
-**Hướng**: chuyển từ "skill viết doc" sang "skill tự động hóa toàn bộ vòng đời doc với input rõ ràng từ BA". Thay đổi này có chủ ý, do user chỉ đạo qua nhiều turn.
+**Direction**: dịch chuyển từ "skill viết doc" sang "skill automate full doc lifecycle với intelligent intake từ BA sources". Dịch chuyển có chủ đích và do user driven qua nhiều turn.
 
-**Đánh giá tự thân**: thay đổi NHIỀU nhưng KHÔNG drift. Mỗi version giải quyết 1 pain point cụ thể user nêu ra. Nếu cảm thấy quá phình to, recommend stop và test trên project thật trước khi build thêm.
-
----
-
-## Snapshot 2 phiên bản
-
-|                          | v1.1.0 (đầu)              | v1.5.1 (hiện tại)                                          | Thay đổi |
-| ------------------------ | ------------------------- | ---------------------------------------------------------- | -------- |
-| **Ngày release**         | 26/04/2026                | 26/04/2026 (cùng ngày)                                     | —        |
-| **Tổng số file**         | 21                        | 32                                                         | +52%     |
-| **Templates**            | 12                        | 14                                                         | +17%     |
-| **Reference docs**       | 2 (process, tools)        | 5 (+ deploy, intake, translate)                            | +150%    |
-| **Guides**               | 1 (README)                | 4 (README + HOW_IT_WORKS + INTAKE_GUIDE en/vi)             | +300%    |
-| **Commands**             | 18                        | 20                                                         | +11%     |
-| **Functional commands**  | 16 doing things           | 18 doing things                                            | +13%     |
-| **SKILL.md độ dài**      | 298 dòng                  | 461 dòng                                                   | +55%     |
-| **Multi-locale support** | Không                     | Có (translate command, glossary, locales config)           | +∞       |
-| **External sources**     | Không                     | Có (Notion / GitHub / GDrive / URL / file)                 | +∞       |
-| **Deploy automation**    | Không                     | Có (Docusaurus preset, dry-run, sync-deletes)              | +∞       |
-| **Re-run safety**        | Không                     | 4-option gate, KB inheritance                              | +∞       |
-| **Drift detection**      | Không                     | walkthrough 3-phase với drift report                       | +∞       |
+**Self-assessment**: thay đổi RẤT NHIỀU nhưng KHÔNG drift. Mỗi version solve 1 user-stated pain point cụ thể. Skill giờ production-ready trong spec nhưng **chưa bao giờ test trên project thật**. Recommend mạnh: stop và test trước khi build thêm.
 
 ---
 
-## Commands: cái nào giữ, cái nào đổi, cái nào mới
+## Snapshot 2 versions
 
-### Giữ nguyên (15 commands có cả 2 versions)
-
-`help`, `audience`, `plan`, `voice`, `draft`, `edit`, `walkthrough`, `record`, `verify`, `publish` — danh sách core không đổi nhiều.
-
-### Đổi tên hoặc gộp (3 commands)
-
-| v1.1.0          | v1.5.1                               | Lý do                                              |
-| --------------- | ------------------------------------ | -------------------------------------------------- |
-| `start`         | gộp vào `init`                       | Trùng chức năng                                    |
-| `validate`      | gộp vào `walkthrough --check`        | Cùng làm chuyện kiểm tra                           |
-| `test`          | gộp vào `walkthrough` (auto)         | Hiếm khi chạy độc lập                              |
-| `peer-review`   | xoá (gate trong `run` thay thế)      | Là human gate, không cần command                   |
-| `tech-review`   | xoá (gate trong `run` thay thế)      | Là human gate, không cần command                   |
-| `review-plan`   | xoá (`run --pause-at after-plan`)    | Là human gate, không cần command                   |
-| `incorporate`   | gộp vào `edit --from-review`         | Cùng là apply feedback                             |
-| `sitemap`       | gộp vào `plan` (output luôn)         | Sitemap là output của plan                         |
-
-### Mới (10 commands không có ở v1.1.0)
-
-| Command         | Mục đích                                                         |
-| --------------- | ---------------------------------------------------------------- |
-| `init`          | Setup workspace + intake form scaffold                           |
-| `module`        | Manage per-feature module intakes                                |
-| `intake-help`   | Print field reference cho intake                                 |
-| `fetch`         | Pull external sources                                            |
-| `run`           | Orchestrated pipeline với pause gate                             |
-| `continue`      | Resume sau gate                                                  |
-| `update`        | Detect external source changes                                   |
-| `translate`     | Multi-locale translation                                         |
-| `categorize`    | Docusaurus category file generator                               |
-| `deploy`        | Sync workspace sang host project                                 |
-
-**Kết luận command**: số lượng tăng nhẹ (18 → 20), nhưng functional thay đổi lớn. v1.1.0 là "tool viết doc"; v1.5.1 là "tool tự động hóa vòng đời doc với external integrations và deploy automation".
+|                          | v1.1.0 (initial)        | v1.5.10 (hiện tại)                                            | Delta    |
+| ------------------------ | ----------------------- | ------------------------------------------------------------ | -------- |
+| **Release date**         | 2026-04-26              | 2026-04-29                                                   | 3 ngày   |
+| **Total files**          | 21                      | 41                                                           | +95%     |
+| **Templates**            | 12                      | 16                                                           | +33%     |
+| **Reference docs**       | 2 (process, tools)      | 5 (+ deploy, intake, translate)                              | +150%    |
+| **Top-level guides**     | 1 (README)              | 7 (README + HOW_IT_WORKS + INTAKE_GUIDE + SETUP + COMPARISON, all en/vi) | +600% |
+| **Commands**             | 18                      | 20                                                           | +11%     |
+| **SKILL.md length**      | 298 lines               | ~570 lines                                                   | +91%     |
+| **Total spec lines**     | ~3,500                  | ~9,000                                                       | +157%    |
+| **Plugin format**        | Plain skill folder      | Claude Code plugin marketplace                               | New      |
+| **Multi-locale**         | Không                   | Có (translate command, glossary)                             | New      |
+| **Source-driven intake** | Không (chỉ manual fill) | Có (`init --from-source`)                                    | New      |
+| **Sitemap consistency**  | Free-form               | 3 patterns (Learning / Task-first / Custom)                  | New      |
+| **Media policy**         | Caption rules only      | Full (density, voiceover, TTS, subtitles)                    | New      |
+| **Test thực tế?**        | Không                   | Không                                                        | Same    |
 
 ---
 
-## Cấu trúc workspace: thay đổi căn bản
+## Cái gì giữ nguyên (the spirit)
 
-### v1.1.0 (đầu — "docs cho documentation")
+Original v1.1.0 design choices survived qua 16 versions:
 
+1. **PRC-010 process** — audience → plan → voice → draft → edit → walkthrough → record. Vẫn là backbone.
+2. **AI-as-implementor, prompt-as-spec** — skill là markdown files Claude đọc, không phải compiled code.
+3. **Workspace-first** — mọi thứ xảy ra trong `documentation/`, có thể standalone hoặc feed Docusaurus.
+4. **Quality bar** — caption discipline, voice charts, drift detection. Tất cả preserved.
+5. **One source of truth per artifact** — drafts, plans, sitemaps mỗi cái có 1 canonical location.
+6. **No silent failures** — khi AI không follow được step, hỏi user. Không thay đổi.
+7. **Re-runnable** — mỗi command check output existence và gate re-run. Strengthened ở v1.3+ nhưng principle đã có sẵn.
+
+---
+
+## Cái gì thay đổi (và tại sao)
+
+### Phase 1: Releases đầu (v1.1.0 → v1.2.x)
+
+**v1.1.0 (initial)**: bare skill. Caption rules, walkthrough basics, manual init/run. Không deploy, không multi-locale, không presets.
+
+**v1.2.0**: thêm `init`, `deploy`, `categorize` commands. YAML config (`.docsmithrc.yaml`). Standalone vs Docusaurus presets. Image namespacing.
+
+**v1.2.1**: HOW_IT_WORKS.md guide (494 lines).
+
+*Drift assessment*: scope expanded nhưng vẫn trong "doc skill" bounds.
+
+### Phase 2: Hardening (v1.3.0 → v1.4.0)
+
+**v1.3.0**: re-run protocol formalized. KB inheritance cho drafts. 3-phase walkthrough (VERIFY → drift gate → APPLY). Drift reports. Per-doc product bug tracking.
+
+**v1.4.0**: multi-locale translation. Per-block AI translation với user review. Glossary tại `standards/glossary.<locale>.yaml`. Translation decisions audit.
+
+*Drift assessment*: vẫn focus chất lượng doc. Re-run protocol là real-world need (regen drafts mất edit = bad). Translation rõ scope.
+
+### Phase 3: Big refactor (v1.5.0 → v1.5.4)
+
+**v1.5.0** (LEAN refactor): replace `.docsmithrc.yaml` bằng markdown intake forms (project.md + modules/<n>.md). Thêm external sources (Notion / GitHub / GDrive / URL / file). Run state tracking. 6 commands mới (`module`, `fetch`, `run`, `continue`, `update`, `intake-help`). Bỏ 8 commands.
+
+**v1.5.1**: fix 6 path conflict issues. INTAKE_GUIDE.md (516 lines en + vi).
+
+**v1.5.2**: Claude Code plugin marketplace format compliance. Restructure thành `.claude-plugin/marketplace.json` + `skills/docsmith/`.
+
+**v1.5.3**: SETUP.md (~700 lines en + vi) cover Claude in Chrome, Playwright MCP, ffmpeg, env vars, token acquisition cho mỗi source type.
+
+**v1.5.4**: sitemap consistency. 11 canonical section types, 3 patterns (Learning / Task-first / Custom). Per-module section selection. AI warn khi modules lag pattern.
+
+*Drift assessment*: đây là chỗ scope bắt đầu cảm thấy lớn. Nhưng mỗi addition trigger bởi specific user pain (vd user show 2 screenshots inconsistent sitemaps cùng project).
+
+### Phase 4: UX polish (v1.5.5 → v1.5.8)
+
+**v1.5.5**: media policy template (~600 lines). Screenshot density rules per content type, voiceover strategy (silent / AI / human), 6 TTS providers, subtitle generation, cost transparency.
+
+**v1.5.6**: collapsed Advanced sections trong intake forms (HTML `<details>`). BAs thấy ~80 lines essentials top-level, 354 total. Pure UX patch.
+
+**v1.5.7**: per-video script files tại `documentation/scripts/<module>/<id>.md`. Multi-locale scripts cùng file (`## en`, `## vi`, `## jp` headings). VIDEO marker simplified. Translate process scripts cùng drafts.
+
+**v1.5.8**: docs refresh. Inline `>` hints mỗi intake field. INTAKE_GUIDE rewrite 516→258 lines (templates self-document giờ). README refresh cho v1.5.7.
+
+*Drift assessment*: UX patches, không phải feature creep. Mỗi cái address "BA phải flip giữa 3 docs" problem.
+
+### Phase 5: Source-driven intake (v1.5.9 → v1.5.10)
+
+**v1.5.9**: `init --from-source` và `module --from-source`. AI đọc BA doc / PRD / existing docs và infer fields. 4-tier confidence model (Fact / Guess / Default / Asked). Interactive Q&A cho environment-specific fields. Inference report với audit trail.
+
+**v1.5.10**: missing module detection trong `update`. 3-layer change report (content drift + module diff + scope drift). Parallel sub-agent guidance (Cấp 1 — "MAY", không "MUST"). `--resume` flag cho partial failures.
+
+*Drift assessment*: solve biggest manual pain (BA gõ tay 354 dòng). Real value. Parallel guidance là documentation-only — không overpromise.
+
+---
+
+## Status hiện tại
+
+### Strengths
+
+- **Complete pipeline**: intake → fetch → audience → plan → voice → draft → edit → walkthrough → record → translate → deploy
+- **Multi-locale first-class**: glossary, per-block review, per-locale media optional
+- **Source-driven intake**: BA không re-type info từ BA doc
+- **Re-run safety**: mọi command preserve manual edits; archive backups
+- **Audit trail**: deployments, drift reports, inference reports, run state — tất cả kept
+- **Plugin marketplace**: install qua `/plugin marketplace add`
+
+### Weaknesses
+
+- **Spec lớn** (~9000 lines across 41 files)
+- **Real-world tested: chưa bao giờ** (16 versions, 0 production runs)
+- **AI behavior là heuristic** — `--from-source` inference, sitemap pattern detection, scope drift comparison đều work qua prose-described heuristics. Real failures chỉ surface trong real use.
+- **Performance unknowns** — parallel sub-agents document MAY, không guarantee speedup. Walkthrough trên 30-module project: untested.
+- **Editing flow giả định Markdown editor render `<details>`** — plain text editor users thấy raw HTML markup
+- **Không CI/CD integration** — không GitHub Action template, không auto-deploy on merge
+
+### Risks
+
+- **Spec drift**: mỗi new version thêm ~100-300 lines. Tại 9000 đã, cognitive load lên AI tăng. Spec quality có thể degrade (consistency giữa sections, conflicting rules) không có test data validate.
+- **AI có thể không follow spec faithfully** — Claude có finite attention. 9000 lines là nhiều để consult. Real test sẽ show skill scale thế nào.
+- **Maintenance burden** — bug fixes require tìm right section, edit carefully, ensure no contradictions. Larger spec → harder.
+
+---
+
+## Cái gì tôi sẽ làm khác nếu start over
+
+Nếu start v2 với all current learnings:
+
+1. **Start với `--from-source` đầu** — manual intake fill được thêm trước AI auto-fill. Hindsight: AI auto-fill nên là primary path; manual fill là fallback. Cái này sẽ giảm intake form complexity (forms giờ self-documenting; AI fill đa số chúng).
+
+2. **Skip multi-version YAML config era** — v1.4.x dùng `.docsmithrc.yaml`. v1.5.0 replace bằng markdown. Backward compat (`--upgrade-from-1.4`) vẫn parse YAML. Nếu start fresh, không YAML phase.
+
+3. **Test sau v1.3** — by v1.3 skeleton đã in place. Nên đã stop, test 1 real project, sau đó build features inform bởi real findings thay vì speculative needs.
+
+4. **Smaller media policy** — v1.5.5 thêm 600 lines cover 6 TTS providers, multi-locale strategies, subtitle generation. Hindsight, "silent video" default plus single TTS option (local-piper) cover 90% cases. Other strategies có thể là Roadmap items.
+
+5. **Defer sitemap patterns đến user feedback** — v1.5.4 thêm 3 patterns + 11 section types vì user show inconsistent sitemaps. Real fix: validate against pattern sau first project. v1.5.4 implement preemptively.
+
+---
+
+## Recommendation cho user
+
+Bạn đã build v1.5.10 = comprehensive doc automation skill. **Stop.** Test 1 real project end-to-end:
+
+```bash
+# 30-phút smoke test
+mkdir test-project && cd test-project
+echo "# MyApp\nA todo app for teams." > ba-doc.md
+/docsmith init --from-source ba-doc.md
+# Note: AI questions, awkward steps, surprising defaults
+/docsmith module todo --from-source ba-doc.md
+/docsmith run todo
+# Note: drafts produced, walkthrough behavior
 ```
-docs/                              ← workspace tên là "docs"
-├── plan/
-├── standards/
-├── drafts/                        ← flat (chưa có locale)
-├── walkthrough/
-├── images/
-└── videos/
-```
 
-Đặc điểm: flat, đơn giản, không có config, không có audit trail, không có deploy target.
-
-### v1.5.1 (hiện tại)
-
-```
-documentation/                     ← rename, deploy target dùng "docs"
-├── intake/                        ← MỚI: BA-friendly config forms
-│   ├── project.md
-│   ├── modules/
-│   │   └── instances.md
-│   └── sources.lock.yaml          ← MỚI: external source state
-├── plan/
-├── standards/
-│   └── glossary.<locale>.yaml     ← MỚI: translation glossary
-├── drafts/<locale>/<module>/      ← MỚI: locale-aware, module-aware
-├── walkthrough/
-│   ├── drift/<ts>/                ← MỚI: drift detection runs
-│   └── active-product-bugs.yaml   ← MỚI: cross-run product bug tracker
-├── archive/<ts>/                  ← MỚI: re-run protocol backups
-├── images/<module>/
-├── videos/
-├── deployments/<ts>-<target>/     ← MỚI: deploy audit trail
-├── .cache/sources/                ← MỚI: external source content cache
-└── .run-state/<module>.yaml       ← MỚI: orchestration state per module
-```
-
-Đặc điểm: hierarchical (locale + module), config-driven, đầy đủ audit trail, deploy automation, integration với external systems.
-
-**Đánh giá**: đây là thay đổi LỚN. Workspace từ chỗ chứa output → chứa config + state + audit + cache + output. Do nhu cầu phát sinh: cần config (BAs cần), cần state (run/continue), cần audit (re-run safety), cần cache (external sources fetch).
+Real-world findings sẽ guide v1.6+. Không có test data, more spec chỉ compound untested assumptions.
 
 ---
 
-## Versioning timeline — mỗi release giải quyết gì
+## Honest assessment của methodology phát triển skill
 
-| Version | Ngày | Trigger | Thêm gì |
-|---------|------|---------|---------|
-| v1.1.0 | 26/04 | Caption rules cho screenshot, video markers | `record` command, 3 templates (screenshot policy, video marker, video plan) |
-| v1.2.0 | 26/04 | Vấn đề Docusaurus integration | `init`, `deploy`, `categorize` commands; deploy preset; `.docsmithrc.yaml` |
-| v1.2.1 | 26/04 | Cần guide dễ hiểu | HOW_IT_WORKS.md (en + vi) |
-| v1.3.0 | 26/04 | Self-check khi product UI đổi | Re-run protocol, walkthrough drift gate, KB inheritance, delete propagation |
-| v1.4.0 | 26/04 | "Phải dịch trước khi deploy" | `translate` command, glossary, multi-locale flow |
-| v1.5.0 | 26/04 | "22 commands quá nhiều, BA ngại YAML" | Markdown intake forms, layered config, `run`/`continue`/`update`/`module`/`fetch` commands, lean refactor (cắt 8 commands cũ) |
-| v1.5.1 | 26/04 | Audit phát hiện 6 path conflicts | Bug fixes + INTAKE_GUIDE practical guide |
+Conversation này build v1.5.10 across 16 releases trong 3 ngày calendar. Mỗi version:
 
-**Quan sát**: mỗi version giải quyết 1 pain point cụ thể bạn nêu ra. Không có version nào "build cho user tưởng tượng". Nhưng tốc độ release dày đặc (7 versions/1 ngày) khiến tích lũy spec nhanh chóng.
+✅ User-driven (responding to specific pain or question)
+✅ Internally consistent (no contradicting features)
+✅ Backward-compatible (re-run protocol cover migrations)
 
----
+Nhưng cũng:
 
-## Mức độ thay đổi từ v1.1.0 → v1.5.1
+❌ Chưa test trong production
+❌ Heuristic-heavy (nhiều của `--from-source`, sitemap detection, scope drift dựa vào AI heuristics có thể không generalize)
+❌ Cumulatively complex (~9000 lines spec khó cho bất kỳ single person — hoặc AI — hold in mind)
 
-### Có thay đổi nhiều không?
-
-**Có. Cụ thể:**
-
-- **Workspace folder rename**: `docs/` → `documentation/`
-- **Config file mới**: `.docsmithrc.yaml` (v1.2) → `intake/project.md + modules/<n>.md` (v1.5)
-- **Workflow chuyển đổi**: từng command riêng → `run` orchestrator
-- **Deploy automation**: thêm hoàn toàn
-- **Multi-locale**: thêm hoàn toàn
-- **External integrations**: thêm hoàn toàn (Notion/GitHub/GDrive)
-- **Re-run safety**: thêm hoàn toàn
-
-### Có drift khỏi mục tiêu gốc không?
-
-**Không. Mục tiêu gốc vẫn được tôn trọng:**
-
-| Mục tiêu v1.1.0 | v1.5.1 |
-|---|---|
-| Process PRC-010 | ✅ Vẫn theo |
-| AI-driven authoring | ✅ Vẫn AI |
-| Self-review 5-pass | ✅ Vẫn có (`edit` command) |
-| Walkthrough verification | ✅ Vẫn có, mạnh hơn (3-phase) |
-| Caption-driven screenshot | ✅ Vẫn có |
-| Voice consistency | ✅ Vẫn có |
-| BA-friendly | ⚠️ Mới thêm (intake forms) — đúng ý gốc |
-
-### Có overhead quá lớn cho user mới không?
-
-**Có thể.** User chạy lần đầu sẽ thấy:
-- Phải hiểu khái niệm: project intake, module intake, source, locale, preset
-- Phải edit 2 file MD (project.md + 1 module file)
-- Phải set env vars cho credentials và sources
-- Phải chọn 6+ checkbox và điền 10+ backtick fields trước khi `run` được
-
-So với v1.1.0: chỉ cần `/docsmith start` và trả lời câu hỏi interactive là chạy.
-
-**Trade-off**: v1.5.1 setup mất 15-30 phút lần đầu, nhưng re-run nhanh hơn và reproducible. v1.1.0 setup nhanh nhưng phải repeat input mỗi lần.
+Skill ở vị trí bất thường: **được design kỹ lưỡng nhưng không validated chút nào**. Recommended next action universally: validate.
 
 ---
 
-## Rủi ro mình thấy
+## Conclusion
 
-### 1. Chưa test trên project thật
+Skill thay đổi substantially (95% more files, 157% more spec) nhưng không drift in spirit. Mỗi change address specific user-stated need.
 
-7 versions trong 1 ngày, không có data thực. Mỗi feature là theory hợp lý nhưng:
-- AI parse MD form có thực sự deterministic? (chưa test)
-- Source fetch Notion/GDrive có work với token thực? (chưa test)
-- `run` orchestration có reliable end-to-end? (chưa test)
-- KB inheritance trong Update mode có thực sự preserve manual edits? (chưa test)
-
-### 2. Spec có thể quá detail
-
-5 reference docs (process, tools, deploy, intake, translate). Tổng spec ~3000+ dòng. AI khi load skill phải đọc cả SKILL.md + reference relevant. Token cost cao mỗi run.
-
-### 3. Số tính năng tăng nhanh hơn integration testing
-
-Mỗi feature mới (deploy, translate, drift, intake, run, update) phụ thuộc lẫn nhau. Bug ở 1 chỗ có thể cascade. Chưa có integration test nào.
-
-### 4. Onboarding path không clear
-
-Có 4 guide (README, HOW_IT_WORKS, INTAKE_GUIDE, CHANGELOG) tổng hơn 2000 dòng. User mới đọc cái nào trước? Hiện chỉ chỉ đường khá generic.
-
----
-
-## Đánh giá tổng thể
-
-### Bạn đang dò đúng hướng nếu
-
-- Project sắp dùng cho team thật, cần BA điền config (intake forms giải quyết)
-- Có Docusaurus repo sẵn (deploy automation giải quyết)
-- Có nhiều ngôn ngữ (translate giải quyết)
-- Source content nằm Notion/GitHub (fetch giải quyết)
-- Có multiple modules/features cần track riêng (module intake giải quyết)
-
-### Bạn đang over-engineering nếu
-
-- Chỉ có 1 người, 1 module, 5-10 trang doc (v1.1.0 đủ rồi)
-- Source content chỉ trong đầu bạn (không cần fetch)
-- 1 ngôn ngữ (không cần translate)
-- Chưa có Docusaurus (standalone preset đủ)
-- Doc 1 lần làm xong không update (không cần re-run safety, drift detection, update command)
-
----
-
-## Recommend
-
-**Nếu chưa test**: STOP build, test v1.5.1 trên 1 project nhỏ thật. 30 phút - 1 buổi. Output là list "chỗ nào AI làm sai, chỗ nào ngại, chỗ nào không cần thiết". Đây là feedback duy nhất có giá trị thực sau 7 versions.
-
-**Nếu cảm thấy phình to**: cân nhắc maintain 2 branches:
-- `lean` branch — pin ở v1.1.0 hoặc v1.2.x cho project nhỏ
-- `main` branch — v1.5+ cho project enterprise có Docusaurus + multi-locale
-
-**Nếu hài lòng với hướng đi**: giữ v1.5.1 là final cho v1.x. Test 2-4 tuần. v1.6 chỉ làm khi có pain point cụ thể từ usage thực.
-
----
-
-## Số liệu cụ thể (cho kỹ thuật)
-
-```
-v1.1.0 to v1.5.1 file changes:
-
-ADDED (16):
-  .docsmithrc.example.yaml (deprecated since 1.5.0, will be removed 1.6)
-  HOW_IT_WORKS.md, HOW_IT_WORKS.vi.md
-  INTAKE_GUIDE.md, INTAKE_GUIDE.vi.md
-  deploy-reference.md
-  intake-reference.md
-  translate-reference.md
-  presets/docusaurus.yaml, presets/standalone.yaml
-  templates/CATEGORY_FILE_TEMPLATE.md
-  templates/DRIFT_REPORT_TEMPLATE.md
-  templates/GLOSSARY_TEMPLATE.yaml
-  templates/MODULE_INTAKE_TEMPLATE.md
-  templates/PROJECT_INTAKE_TEMPLATE.md
-  templates/SOURCES_LOCK_TEMPLATE.md
-
-REMOVED (5):
-  subprocess-010a.md (folded into process-reference)
-  templates/TRACEABILITY_MATRIX_TEMPLATE.md (inlined)
-  templates/UX_CONTENT_SCORECARD_TEMPLATE.md (now opt-in via voice --full)
-  templates/UX_TEXT_PATTERNS_TEMPLATE.md (now opt-in)
-  templates/WALKTHROUGH_TEST_EXECUTION_TEMPLATE.md (folded into test-case)
-
-MODIFIED (significantly): all other files
-
-Net file change: +11 (21 → 32)
-```
+Risk giờ không phải "skill này sai"; là "skill này lớn và untested." Test trước khi thêm.

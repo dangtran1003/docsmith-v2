@@ -1,267 +1,195 @@
-# Comparison: v1.1.0 vs v1.5.1
+# Comparison: v1.1.0 vs v1.5.10
 
-A self-review comparing the first release (v1.1.0) with the current release (v1.5.1) of docsmith. Purpose: check whether the skill has changed too much, drifted from original goals, or grown in scope appropriately.
+Self-review comparing the first release (v1.1.0) with the current release (v1.5.10). Purpose: check whether the skill has changed too much, drifted from original goals, or grown in scope appropriately.
 
 > 🇻🇳 Bản tiếng Việt: [COMPARISON.vi.md](COMPARISON.vi.md)
 
 ## TL;DR
 
-**Volume**: significantly larger (files +52%, spec lines roughly +200%, command count similar but functionality very different).
+**Volume**: significantly larger (files +95%, spec lines +210%, commands +11% but functionality very different).
 
 **Spirit**: preserved — still PRC-010 process, still AI-driven, still focused on doc quality.
 
-**Direction**: shifted from "skill that writes docs" to "skill that automates the full doc lifecycle with clear BA input". Shift was intentional and user-directed across multiple turns.
+**Direction**: shifted from "skill that writes docs" to "skill that automates the full doc lifecycle with intelligent intake from BA sources". Shift was intentional and user-directed across multiple turns.
 
-**Self-assessment**: changed A LOT but did NOT drift. Each version solved a specific user-stated pain point. If it now feels bloated, recommend stopping and testing on a real project before building further.
+**Self-assessment**: changed A LOT but did NOT drift. Each version solved a specific user-stated pain point. The skill is now production-ready in spec but **has never been tested on a real project**. Strong recommendation: stop and test before building further.
 
 ---
 
 ## Snapshot of both versions
 
-|                          | v1.1.0 (initial)        | v1.5.1 (current)                                          | Delta    |
-| ------------------------ | ----------------------- | --------------------------------------------------------- | -------- |
-| **Release date**         | Apr 26, 2026            | Apr 26, 2026 (same day)                                   | —        |
-| **Total files**          | 21                      | 32                                                        | +52%     |
-| **Templates**            | 12                      | 14                                                        | +17%     |
-| **Reference docs**       | 2 (process, tools)      | 5 (+ deploy, intake, translate)                           | +150%    |
-| **Guides**               | 1 (README)              | 4 (README + HOW_IT_WORKS + INTAKE_GUIDE en/vi)            | +300%    |
-| **Commands**             | 18                      | 20                                                        | +11%     |
-| **Functional commands**  | 16 doing actual work    | 18 doing actual work                                      | +13%     |
-| **SKILL.md length**      | 298 lines               | 461 lines                                                 | +55%     |
-| **Multi-locale support** | No                      | Yes (translate command, glossary, locales config)         | +∞       |
-| **External sources**     | No                      | Yes (Notion / GitHub / GDrive / URL / file)               | +∞       |
-| **Deploy automation**    | No                      | Yes (Docusaurus preset, dry-run, sync-deletes)            | +∞       |
-| **Re-run safety**        | No                      | 4-option gate, KB inheritance                             | +∞       |
-| **Drift detection**      | No                      | walkthrough 3-phase with drift report                     | +∞       |
+|                          | v1.1.0 (initial)        | v1.5.10 (current)                                            | Delta    |
+| ------------------------ | ----------------------- | ------------------------------------------------------------ | -------- |
+| **Release date**         | 2026-04-26              | 2026-04-29                                                   | 3 days   |
+| **Total files**          | 21                      | 41                                                           | +95%     |
+| **Templates**            | 12                      | 16                                                           | +33%     |
+| **Reference docs**       | 2 (process, tools)      | 5 (+ deploy, intake, translate)                              | +150%    |
+| **Top-level guides**     | 1 (README)              | 7 (README + HOW_IT_WORKS + INTAKE_GUIDE + SETUP + COMPARISON, all en/vi) | +600% |
+| **Commands**             | 18                      | 20                                                           | +11%     |
+| **SKILL.md length**      | 298 lines               | ~570 lines                                                   | +91%     |
+| **Total spec lines**     | ~3,500                  | ~9,000                                                       | +157%    |
+| **Plugin format**        | Plain skill folder      | Claude Code plugin marketplace                               | New      |
+| **Multi-locale**         | No                      | Yes (translate command, glossary)                            | New      |
+| **Source-driven intake** | No (manual fill only)   | Yes (`init --from-source`)                                   | New      |
+| **Sitemap consistency**  | Free-form               | 3 patterns (Learning / Task-first / Custom)                  | New      |
+| **Media policy**         | Caption rules only      | Full (density, voiceover, TTS, subtitles)                    | New      |
+| **Real-world tested?**   | No                      | No                                                           | Same    |
 
 ---
 
-## Commands: kept, renamed, removed, added
+## What stayed the same (the spirit)
 
-### Kept across versions (15 commands)
+The original v1.1.0 design choices that survived all 16 versions:
 
-`help`, `audience`, `plan`, `voice`, `draft`, `edit`, `walkthrough`, `record`, `verify`, `publish` — core list largely intact.
-
-### Renamed or merged (8 commands)
-
-| v1.1.0          | v1.5.1                              | Reason                                          |
-| --------------- | ----------------------------------- | ----------------------------------------------- |
-| `start`         | merged into `init`                  | Duplicated functionality                        |
-| `validate`      | merged into `walkthrough --check`   | Same verification job                           |
-| `test`          | merged into `walkthrough` (auto)    | Rarely run standalone                           |
-| `peer-review`   | removed (gate in `run` instead)     | It's a human gate, doesn't need a command       |
-| `tech-review`   | removed (gate in `run` instead)     | It's a human gate, doesn't need a command       |
-| `review-plan`   | removed (`run --pause-at after-plan`) | Inline gate replaces it                       |
-| `incorporate`   | merged into `edit --from-review`    | Both apply feedback                             |
-| `sitemap`       | merged into `plan` (output)         | Sitemap is plan's output                        |
-
-### Added (10 commands not in v1.1.0)
-
-| Command         | Purpose                                                            |
-| --------------- | ------------------------------------------------------------------ |
-| `init`          | Setup workspace + intake form scaffold                             |
-| `module`        | Manage per-feature module intakes                                  |
-| `intake-help`   | Print field reference for intake forms                             |
-| `fetch`         | Pull external sources                                              |
-| `run`           | Orchestrated pipeline with pause gate                              |
-| `continue`      | Resume after gate                                                  |
-| `update`        | Detect external source changes                                     |
-| `translate`     | Multi-locale translation                                           |
-| `categorize`    | Docusaurus category file generator                                 |
-| `deploy`        | Sync workspace to host project                                     |
-
-**Command bottom line**: count went up slightly (18 → 20), but functionality changed dramatically. v1.1.0 was "a writing tool"; v1.5.1 is "a doc lifecycle automation tool with external integrations and deploy automation".
+1. **PRC-010 process** — audience → plan → voice → draft → edit → walkthrough → record. Still the backbone.
+2. **AI-as-implementor, prompt-as-spec** — skill is markdown files Claude reads, not compiled code.
+3. **Workspace-first** — everything happens in `documentation/`, can be standalone or feed Docusaurus.
+4. **Quality bar** — caption discipline, voice charts, drift detection. All preserved.
+5. **One source of truth per artifact** — drafts, plans, sitemaps each have one canonical location.
+6. **No silent failures** — when AI can't follow a step, it asks the user. Hasn't changed.
+7. **Re-runnable** — every command checks output existence and gates re-run. Strengthened in v1.3+ but the principle was already there.
 
 ---
 
-## Workspace structure: fundamental change
+## What changed (and why)
 
-### v1.1.0 (initial — "docs for documentation")
+### Phase 1: First releases (v1.1.0 → v1.2.x)
 
+**v1.1.0 (initial)**: bare skill. Caption rules, walkthrough basics, manual init/run. No deploy, no multi-locale, no presets.
+
+**v1.2.0**: added `init`, `deploy`, `categorize` commands. YAML config (`.docsmithrc.yaml`). Standalone vs Docusaurus presets. Image namespacing.
+
+**v1.2.1**: HOW_IT_WORKS.md guide added (494 lines).
+
+*Drift assessment*: scope expanded but stayed within "doc skill" bounds.
+
+### Phase 2: Hardening (v1.3.0 → v1.4.0)
+
+**v1.3.0**: re-run protocol formalized. KB inheritance for drafts. 3-phase walkthrough (VERIFY → drift gate → APPLY). Drift reports. Per-doc product bug tracking.
+
+**v1.4.0**: multi-locale translation. Per-block AI translation with user review. Glossary at `standards/glossary.<locale>.yaml`. Translation decisions audit.
+
+*Drift assessment*: still focused on doc quality. Re-run protocol was a real-world need (regenerating drafts losing edits = bad). Translation was clearly scoped.
+
+### Phase 3: Big refactor (v1.5.0 → v1.5.4)
+
+**v1.5.0** (LEAN refactor): replaced `.docsmithrc.yaml` with markdown intake forms (project.md + modules/<n>.md). Added external sources (Notion / GitHub / GDrive / URL / file). Run state tracking. 6 new commands (`module`, `fetch`, `run`, `continue`, `update`, `intake-help`). Removed 8 commands.
+
+**v1.5.1**: fixed 6 path conflict issues. INTAKE_GUIDE.md added (516 lines en + vi).
+
+**v1.5.2**: Claude Code plugin marketplace format compliance. Restructured to `.claude-plugin/marketplace.json` + `skills/docsmith/`.
+
+**v1.5.3**: SETUP.md added (~700 lines en + vi) covering Claude in Chrome, Playwright MCP, ffmpeg, env vars, token acquisition for each source type.
+
+**v1.5.4**: sitemap consistency. 11 canonical section types, 3 patterns (Learning / Task-first / Custom). Per-module section selection. AI warns when modules lag pattern.
+
+*Drift assessment*: this is where scope started feeling big. But each addition was triggered by a specific user pain (e.g., user showed two screenshots of inconsistent sitemaps from same project).
+
+### Phase 4: UX polish (v1.5.5 → v1.5.8)
+
+**v1.5.5**: media policy template (~600 lines). Screenshot density rules per content type, voiceover strategy (silent / AI / human), 6 TTS providers, subtitle generation, cost transparency.
+
+**v1.5.6**: collapsed Advanced sections in intake forms (HTML `<details>`). BAs see ~80 lines essentials top-level, 354 total. Pure UX patch.
+
+**v1.5.7**: per-video script files at `documentation/scripts/<module>/<id>.md`. Multi-locale scripts in same file (`## en`, `## vi`, `## jp` headings). VIDEO marker simplified. Translate processes scripts alongside drafts.
+
+**v1.5.8**: docs refresh. Inline `>` hints in every intake field. INTAKE_GUIDE rewritten 516→258 lines (templates self-document now). README refreshed for v1.5.7.
+
+*Drift assessment*: UX patches, not feature creep. Each addressed the "BA has to flip between 3 docs" problem.
+
+### Phase 5: Source-driven intake (v1.5.9 → v1.5.10)
+
+**v1.5.9**: `init --from-source` and `module --from-source`. AI reads BA doc / PRD / existing docs and infers fields. 4-tier confidence model (Fact / Guess / Default / Asked). Interactive Q&A for environment-specific fields. Inference report with audit trail.
+
+**v1.5.10**: missing module detection in `update`. 3-layer change report (content drift + module diff + scope drift). Parallel sub-agent guidance (Cấp 1 — "MAY", not "MUST"). `--resume` flag for partial failures.
+
+*Drift assessment*: solves the biggest manual pain (BA gõ tay 354 dòng). Real value. Parallel guidance is documentation-only — no overpromise.
+
+---
+
+## Where do we stand now?
+
+### Strengths
+
+- **Complete pipeline**: intake → fetch → audience → plan → voice → draft → edit → walkthrough → record → translate → deploy
+- **Multi-locale first-class**: glossary, per-block review, per-locale media optional
+- **Source-driven intake**: BA doesn't re-type info from BA doc
+- **Re-run safety**: every command preserves manual edits; archives backups
+- **Audit trail**: deployments, drift reports, inference reports, run state — all kept
+- **Plugin marketplace**: installable via `/plugin marketplace add`
+
+### Weaknesses
+
+- **Spec is large** (~9000 lines across 41 files)
+- **Real-world tested: never** (16 versions, 0 production runs)
+- **AI behavior is heuristic** — `--from-source` inference, sitemap pattern detection, scope drift comparison all work via prose-described heuristics. Real failures only surface in real use.
+- **Performance unknowns** — parallel sub-agents document MAY, don't guarantee speedup. Walkthrough on 30-module project: untested.
+- **Editing flow assumes Markdown editor with `<details>` rendering** — plain text editor users see raw HTML markup
+- **No CI/CD integration** — no GitHub Action template, no auto-deploy on merge
+
+### Risks
+
+- **Spec drift**: each new version adds ~100-300 lines. At 9000 already, cognitive load on AI grows. Spec quality may degrade (consistency between sections, conflicting rules) without test data to validate.
+- **AI may not follow spec faithfully** — Claude has finite attention. 9000 lines is a lot to consult. Real test will show how well skill scales.
+- **Maintenance burden** — bug fixes require finding the right section, editing carefully, ensuring no contradictions. Larger spec → harder.
+
+---
+
+## What I'd do differently if starting over
+
+If I were starting v2 with all current learnings:
+
+1. **Start with `--from-source` first** — manual intake fill was added before AI auto-fill. In hindsight, AI auto-fill should be primary path; manual fill is the fallback. This would reduce intake form complexity (forms are now self-documenting; AI fills most of them).
+
+2. **Skip multi-version YAML config era** — v1.4.x used `.docsmithrc.yaml`. v1.5.0 replaced with markdown. Backward compat (`--upgrade-from-1.4`) still parses YAML. If starting fresh, no YAML phase.
+
+3. **Test after v1.3** — by v1.3 the skeleton was in place. Should have stopped, tested 1 real project, then built features informed by real findings instead of speculative needs.
+
+4. **Smaller media policy** — v1.5.5 added 600 lines covering 6 TTS providers, multi-locale strategies, subtitle generation. In retrospect, "silent video" default plus a single TTS option (local-piper) covers 90% of cases. Other strategies could be Roadmap items.
+
+5. **Defer sitemap patterns to user feedback** — v1.5.4 added 3 patterns + 11 section types because user showed inconsistent sitemaps. Real fix: validate against pattern after first project. v1.5.4 implemented preemptively.
+
+---
+
+## Recommendation for the user
+
+You've built v1.5.10 = a comprehensive doc automation skill. **Stop.** Test 1 real project end-to-end:
+
+```bash
+# 30-minute smoke test
+mkdir test-project && cd test-project
+echo "# MyApp\nA todo app for teams." > ba-doc.md
+/docsmith init --from-source ba-doc.md
+# Note: AI questions, awkward steps, surprising defaults
+/docsmith module todo --from-source ba-doc.md
+/docsmith run todo
+# Note: drafts produced, walkthrough behavior
 ```
-docs/                              ← workspace named "docs"
-├── plan/
-├── standards/
-├── drafts/                        ← flat (no locales)
-├── walkthrough/
-├── images/
-└── videos/
-```
 
-Characteristics: flat, simple, no config, no audit trail, no deploy target.
-
-### v1.5.1 (current)
-
-```
-documentation/                     ← renamed; deploy target uses "docs"
-├── intake/                        ← NEW: BA-friendly config forms
-│   ├── project.md
-│   ├── modules/
-│   │   └── instances.md
-│   └── sources.lock.yaml          ← NEW: external source state
-├── plan/
-├── standards/
-│   └── glossary.<locale>.yaml     ← NEW: translation glossary
-├── drafts/<locale>/<module>/      ← NEW: locale-aware, module-aware
-├── walkthrough/
-│   ├── drift/<ts>/                ← NEW: drift detection runs
-│   └── active-product-bugs.yaml   ← NEW: cross-run product bug tracker
-├── archive/<ts>/                  ← NEW: re-run protocol backups
-├── images/<module>/
-├── videos/
-├── deployments/<ts>-<target>/     ← NEW: deploy audit trail
-├── .cache/sources/                ← NEW: external source content cache
-└── .run-state/<module>.yaml       ← NEW: orchestration state per module
-```
-
-Characteristics: hierarchical (locale + module), config-driven, full audit trail, deploy automation, integration with external systems.
-
-**Assessment**: this is a BIG change. Workspace went from "holds outputs" to "holds config + state + audit + cache + outputs". Driven by emerging needs: BAs needed config, run/continue needed state, re-run safety needed audit, external sources needed cache.
+Real-world findings will guide v1.6+. Without test data, more spec just compounds untested assumptions.
 
 ---
 
-## Versioning timeline — what each release solved
+## Honest assessment of skill development methodology
 
-| Version | Date | Trigger | What was added |
-|---------|------|---------|----------------|
-| v1.1.0 | Apr 26 | Caption rules for screenshots, video markers | `record` command, 3 templates (screenshot policy, video marker, video plan) |
-| v1.2.0 | Apr 26 | Docusaurus integration concern | `init`, `deploy`, `categorize` commands; deploy preset; `.docsmithrc.yaml` |
-| v1.2.1 | Apr 26 | Need accessible guide | HOW_IT_WORKS.md (en + vi) |
-| v1.3.0 | Apr 26 | Self-check after product UI changes | Re-run protocol, walkthrough drift gate, KB inheritance, delete propagation |
-| v1.4.0 | Apr 26 | "Must translate before deploy" | `translate` command, glossary, multi-locale flow |
-| v1.5.0 | Apr 26 | "22 commands too many; BAs hate YAML" | Markdown intake forms, layered config, `run`/`continue`/`update`/`module`/`fetch` commands, lean refactor (cut 8 old commands) |
-| v1.5.1 | Apr 26 | Audit found 6 path conflicts | Bug fixes + INTAKE_GUIDE practical guide |
+This conversation built v1.5.10 across 16 releases in 3 calendar days. Each version was:
 
-**Observation**: every version solved a specific stated pain point. No version was built for imagined users. But the dense release pace (7 versions in one day) accumulated spec quickly.
+✅ User-driven (responding to specific pain or question)
+✅ Internally consistent (no contradicting features)
+✅ Backward-compatible (re-run protocol covers migrations)
 
----
+But also:
 
-## How much did things change from v1.1.0 → v1.5.1?
+❌ Untested in production
+❌ Heuristic-heavy (much of `--from-source`, sitemap detection, scope drift relies on AI heuristics that may not generalize)
+❌ Cumulatively complex (~9000 lines spec is hard for any single person — or AI — to hold in mind)
 
-### Did we change a lot?
-
-**Yes. Specifically:**
-
-- **Workspace folder rename**: `docs/` → `documentation/`
-- **New config approach**: `.docsmithrc.yaml` (v1.2) → `intake/project.md + modules/<n>.md` (v1.5)
-- **Workflow shift**: individual commands → `run` orchestrator
-- **Deploy automation**: added entirely
-- **Multi-locale**: added entirely
-- **External integrations**: added entirely (Notion / GitHub / GDrive)
-- **Re-run safety**: added entirely
-
-### Did we drift from original goals?
-
-**No. Original goals are still respected:**
-
-| v1.1.0 goal | v1.5.1 |
-|---|---|
-| PRC-010 process | ✅ Still followed |
-| AI-driven authoring | ✅ Still AI |
-| 5-pass self-review | ✅ Still present (`edit`) |
-| Walkthrough verification | ✅ Still present, stronger (3-phase) |
-| Caption-driven screenshots | ✅ Still present |
-| Voice consistency | ✅ Still present |
-| BA-friendly | ⚠️ NEW (intake forms) — aligns with original spirit |
-
-### Is overhead too high for new users?
-
-**Probably yes.** A new user running v1.5.1 first time will face:
-- Concepts to grasp: project intake, module intake, sources, locales, presets
-- Two MD files to fill (project.md + at least one module file)
-- Env vars to set for credentials and sources
-- 6+ checkboxes to tick and 10+ backtick fields to fill before `run` works
-
-Compare to v1.1.0: just `/docsmith start` and answer interactive questions.
-
-**Trade-off**: v1.5.1 takes 15-30 minutes setup first time but is reproducible and faster on re-run. v1.1.0 was faster setup but required repeat input every time.
+The skill is in the unusual position of being **designed thoroughly but not validated at all**. Recommended next action is universally: validate.
 
 ---
 
-## Risks I see
+## Conclusion
 
-### 1. Not tested on a real project yet
+The skill changed substantially (95% more files, 157% more spec) but did not drift in spirit. Each change addressed a specific user-stated need.
 
-7 versions in one day, no real data. Each feature is theoretically sound but:
-- Does AI parse MD forms deterministically? (untested)
-- Do Notion/GDrive source fetches work with real tokens? (untested)
-- Is `run` orchestration reliable end-to-end? (untested)
-- Does KB inheritance in Update mode actually preserve manual edits? (untested)
-
-### 2. Spec may be too detailed
-
-5 reference docs (process, tools, deploy, intake, translate). Total spec ~3000+ lines. AI loading skill must read SKILL.md + relevant references. High token cost per run.
-
-### 3. Feature count grew faster than integration testing
-
-Each new feature (deploy, translate, drift, intake, run, update) depends on others. Bugs in one place can cascade. No integration tests yet.
-
-### 4. Onboarding path is unclear
-
-4 guides (README, HOW_IT_WORKS, INTAKE_GUIDE, CHANGELOG) totaling 2000+ lines. Which should a new user read first? Currently directing is rather generic.
-
----
-
-## Overall assessment
-
-### You're heading the right direction if
-
-- Project will be used by a real team, BAs need to fill config (intake forms address this)
-- You have an existing Docusaurus repo (deploy automation addresses this)
-- Multiple languages (translate addresses this)
-- Source content lives in Notion / GitHub (fetch addresses this)
-- Multiple modules/features needing separate tracking (module intakes address this)
-
-### You're over-engineering if
-
-- Solo project, one module, 5-10 doc pages (v1.1.0 was enough)
-- Source content lives only in your head (no fetch needed)
-- One language (no translate needed)
-- No Docusaurus yet (standalone preset is fine)
-- Docs done once, never updated (no re-run safety, drift detection, update command needed)
-
----
-
-## Recommendations
-
-**If untested**: STOP building. Test v1.5.1 on a small real project. 30 minutes - half day. Output is a list of "where AI got it wrong, where it felt awkward, what wasn't necessary". This is the only meaningful feedback after 7 versions.
-
-**If feeling bloated**: consider maintaining 2 branches:
-- `lean` branch — pinned at v1.1.0 or v1.2.x for small projects
-- `main` branch — v1.5+ for enterprise projects with Docusaurus + multi-locale
-
-**If happy with the direction**: keep v1.5.1 as final for v1.x. Test for 2-4 weeks. v1.6 only if specific pain points emerge from real usage.
-
----
-
-## Concrete numbers (technical detail)
-
-```
-v1.1.0 → v1.5.1 file changes:
-
-ADDED (16):
-  .docsmithrc.example.yaml (deprecated since 1.5.0, will be removed 1.6)
-  HOW_IT_WORKS.md, HOW_IT_WORKS.vi.md
-  INTAKE_GUIDE.md, INTAKE_GUIDE.vi.md
-  deploy-reference.md
-  intake-reference.md
-  translate-reference.md
-  presets/docusaurus.yaml, presets/standalone.yaml
-  templates/CATEGORY_FILE_TEMPLATE.md
-  templates/DRIFT_REPORT_TEMPLATE.md
-  templates/GLOSSARY_TEMPLATE.yaml
-  templates/MODULE_INTAKE_TEMPLATE.md
-  templates/PROJECT_INTAKE_TEMPLATE.md
-  templates/SOURCES_LOCK_TEMPLATE.md
-
-REMOVED (5):
-  subprocess-010a.md (folded into process-reference)
-  templates/TRACEABILITY_MATRIX_TEMPLATE.md (inlined)
-  templates/UX_CONTENT_SCORECARD_TEMPLATE.md (now opt-in via voice --full)
-  templates/UX_TEXT_PATTERNS_TEMPLATE.md (now opt-in)
-  templates/WALKTHROUGH_TEST_EXECUTION_TEMPLATE.md (folded into test-case)
-
-MODIFIED (significantly): all other files
-
-Net file change: +11 (21 → 32)
-```
+The risk now is not "this skill is wrong"; it's "this skill is large and untested." Test before adding more.
