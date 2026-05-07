@@ -3,6 +3,239 @@
 All notable changes to this skill are documented in this file.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Semantic Versioning](https://semver.org/).
 
+## [1.5.14] - 2026-04-30
+
+Templates cleanup — remove redundant template files. Pure refactor with no behavior change.
+
+### Why
+
+After 19 versions, templates folder accumulated overlap:
+- `SCREENSHOT_POLICY_TEMPLATE.md` (108 lines) — caption rules, density, naming. 80% covered by `MEDIA_POLICY_TEMPLATE.md` (which was added in v1.5.5 specifically to consolidate media rules).
+- `VIDEO_MARKER_TEMPLATE.md` (155 lines) — explained marker syntax. But marker is now just `<!-- VIDEO id: <id> -->` since v1.5.7. 155 lines for a 1-line spec is overkill. The format is now documented in `VIDEO_SCRIPT_TEMPLATE.md § VIDEO marker simplified`.
+- `WALKTHROUGH_VIDEO_PLAN_TEMPLATE.md` (72 lines) — capture plan format. Already covered by SKILL.md `record` command workflow.
+
+Three template files removed. Caption rules merged into MEDIA_POLICY § 3.5. Marker syntax retained in VIDEO_SCRIPT.
+
+### Removed
+
+- `templates/SCREENSHOT_POLICY_TEMPLATE.md`
+- `templates/VIDEO_MARKER_TEMPLATE.md`
+- `templates/WALKTHROUGH_VIDEO_PLAN_TEMPLATE.md`
+
+### Changed
+
+- **`templates/MEDIA_POLICY_TEMPLATE.md`** — new section 3.5 "Caption writing rules (consolidated)" containing:
+  - When to include / not include screenshots
+  - Rule A: state-not-action
+  - Rule B: specific data and state
+  - Rule C: label-not-appearance
+  - Rule D: placeholder placement
+  - File naming conventions
+  - State that cannot be reproduced
+  - Pre-walkthrough caption review
+  - "When in doubt" check
+  Internal references in MEDIA_POLICY updated from old template names.
+- **`SKILL.md`** — `draft` command refers to `MEDIA_POLICY_TEMPLATE.md § 3.5` for caption rules and `VIDEO_SCRIPT_TEMPLATE.md § VIDEO marker` for marker syntax. `record` command refers only to `VIDEO_SCRIPT_TEMPLATE.md`.
+
+### Templates count
+
+- Before v1.5.14: 17 templates (16 .md + 1 .yaml)
+- After v1.5.14: 14 templates (13 .md + 1 .yaml)
+- Net: -3 .md files
+
+Total spec lines reduced ~335 (caption rules retained in MEDIA_POLICY but at lower verbosity; redundant content removed entirely).
+
+### Backward compat
+
+- For users referencing old template paths in custom scripts: SCREENSHOT_POLICY/VIDEO_MARKER/WALKTHROUGH_VIDEO_PLAN are GONE. Update references to new locations.
+- For users with existing workspaces: nothing changes. These templates were AI-internal references; users never directly consumed them.
+- For CHANGELOG history: kept references to old template names in v1.1.0-1.5.13 entries (historically accurate).
+
+### Why this is a patch (not minor)
+
+Pure refactor. No new commands, no new behavior, no schema changes. Plugin functionality identical to 1.5.13.
+
+### Migration
+
+None needed for users with workspaces. Custom scripts referencing deleted template paths must update to new locations.
+
+## [1.5.13] - 2026-04-30
+
+Interactive fill protocol — pipeline stages now prompt user inline when intake fields are empty, write answers back, continue. No upfront 354-line form fill required.
+
+### Why
+
+User raised: "Tôi nghĩ là ở bước init hay module, nếu có from-source thì sẽ đánh dấu là có file intake, sử dụng chạy luồng như .11; còn không có thì sẽ vẫn gen ra file intake, nhưng sẽ đánh dấu đầu file là module đó, là manual, rồi launch từng bước như follow ban đầu, và qua mỗi bước tự fill vào file intake — chứ không phải người điền."
+
+Original proposal: mode marker + conditional behavior per command. Analysis showed simpler approach achieves same UX outcome: detect empty critical fields per stage, prompt user, write back. No marker needed.
+
+This patch implements that simpler approach.
+
+### Added
+
+- **Interactive fill behavior** for all stage commands (`audience`, `plan`, `voice`, `draft`, `edit`, `walkthrough`, `record`, `translate`):
+  - Stage checks its required fields
+  - If empty AND critical → prompt user inline
+  - If empty AND has safe default → use default silently
+  - If empty AND optional → skip
+  - Answer written back to intake (preserves markdown structure, hint comments untouched)
+  - Stage continues
+- **`--no-prompt` flag** on all stage commands — fail immediately if required field empty (old behavior). Useful for CI scripts.
+- **`intake-reference.md` § 10** "Interactive fill protocol" with:
+  - Activation rules (when prompts fire)
+  - Per-stage required field tables (audience, plan, voice, draft, edit, walkthrough, record, translate)
+  - Concrete prompt examples for each stage
+  - Write-back format (idempotent, preserves structure)
+  - Mixed flow scenarios (auto-fill + interactive)
+  - Validation order (critical → safe defaults → silent fallback)
+  - 4 limitations called out
+
+### Changed
+
+- **`SKILL.md` stage commands** — added "Interactive fill (v1.5.13+)" note to:
+  - audience/plan/voice/draft/edit (merged section)
+  - walkthrough
+  - record
+  - translate
+- **Stage commands document `--no-prompt` flag** uniformly
+- **`README.md` step-by-step alternative section** — refreshed to highlight 2 ways to drive intake:
+  - Pre-fill mode (traditional)
+  - Interactive mode (v1.5.13+)
+  - Workflow example shows which prompts fire when
+  - `--no-prompt` flag mentioned
+- **README requirements simplified**: only `project.md` and `modules/<n>.md` need to EXIST (created by `init` and `module` commands). Filling them is optional with interactive fill.
+
+### Per-stage required fields
+
+| Stage | Critical fields prompt-able |
+|---|---|
+| `audience` | Primary persona role, technical level, primary goal |
+| `plan` | (none — feature definition enforced by `module` command) |
+| `voice` | (none — all fields have safe defaults) |
+| `draft` | Sources confirmation (or "no sources" explicit) |
+| `edit` | (none — operates on existing drafts) |
+| `walkthrough` | Product URL, credentials env var names |
+| `record` | TTS provider + voice IDs (only if AI voiceover) |
+| `translate` | Target languages |
+
+Most stages don't trigger prompts because either:
+- Defaults are safe (voice, sitemap, media policy)
+- Earlier stages enforce dependencies (`module` enforces features for `plan` and `draft`)
+
+### How it works
+
+Behavior is detect-and-ask, not mode-flag:
+
+1. AI runs stage command
+2. AI reads intake (project + module + defaults via layered config)
+3. AI checks ITS required fields (per-stage table)
+4. If any empty AND critical → prompt user with concrete question
+5. User answers; AI writes to correct intake file at correct location
+6. AI re-validates; if all critical fields now present → continue stage
+
+No mode marker. No "manual" vs "auto" distinction. Each stage checks what it needs, asks if missing.
+
+### Mixed flow example
+
+```bash
+# User runs init without source
+/docsmith init
+/docsmith module myproduct
+
+# project.md and modules/myproduct.md exist but mostly empty
+# User runs first stage:
+/docsmith audience myproduct
+# AI prompts: role? tech level? goal?
+# User answers; AI writes to project.md § 2
+
+/docsmith plan myproduct
+# No prompts (audience already populated, sitemap pattern defaults to A)
+
+/docsmith draft myproduct
+# AI: "No sources defined. Continue draft from intake info only? Y/n"
+# User: y
+# AI marks "no external sources" in project.md § 6, drafts
+
+/docsmith walkthrough myproduct
+# AI prompts: product URL? credentials env vars?
+# User answers; AI writes to project.md § 1, § 5
+# AI verifies env vars set in shell; reports if missing
+```
+
+Each stage minimal Q&A, distributed across pipeline. User never sees 354-line form.
+
+### Backward compatibility
+
+For users who DID pre-fill intake (workflow before v1.5.13):
+- AI sees fields filled
+- Skips prompts
+- Behavior identical to v1.5.12
+
+For users who run with `--no-prompt`:
+- Same behavior as v1.5.12 (fail-fast on missing field)
+- For CI / scripts
+
+For users using `init --from-source`:
+- AI auto-fills 80% of fields
+- Stage prompts only fire for uncovered critical fields (deploy target, credentials)
+- Same as v1.5.9-1.5.12
+
+### Limitations (v1.5.13)
+
+- **No partial answer recovery** — if user aborts mid-prompt, stage exits. Re-run remembers answered fields.
+- **No prompt for module-specific fields in project-level stages** (`voice` is project-level)
+- **No semantic validation** of free-text answers
+- **Order-sensitive** — running `draft` before `audience` prompts more (would re-ask audience info)
+
+### Migration from v1.5.12
+
+For new projects: just use v1.5.13. New behavior is additive.
+
+For existing v1.5.12 projects: works identically. If intake fields were already filled, no prompts will fire. Interactive fill only activates for NEW empty fields.
+
+### Why this is a patch (not minor)
+
+No new commands. No schema changes. New behavior on existing commands (interactive prompts when fields empty). Behavior is additive: previously stages would fail on missing critical field; now they prompt. With `--no-prompt`, behavior identical to before.
+
+Plugin functionality identical to 1.5.12 for users with filled intakes OR users who use `--no-prompt`.
+
+## [1.5.12] - 2026-04-29
+
+Documentation patch — explicit "step-by-step alternative" section in README for users who prefer running each pipeline stage manually instead of using `run` to auto-chain.
+
+### Why
+
+User raised: "Tôi đã hướng dẫn user chạy theo version đầu tiên, đi từng bước 1; user vẫn muốn chạy theo cách đó được không?"
+
+Answer: yes, every individual stage command (`audience`, `plan`, `voice`, `draft`, `edit`, `walkthrough`, `record`, `translate`, `verify`, `deploy`) still works in v1.5.x. The `run` command is just an orchestrator on top of these.
+
+But the README and HOW_IT_WORKS guides positioned `run` as the primary workflow. Step-by-step path was implicit, not documented. Users coming from v1.4.x or earlier tutorials might not realize the granular flow is supported.
+
+This patch adds an explicit subsection making the step-by-step flow first-class.
+
+### Changed
+
+- **`README.md`** — added "Step-by-step alternative (granular control)" subsection in Quick start. Covers:
+  - Full sequence of individual commands (10 stages) with inline output paths
+  - 2 requirements before running any stage (`project.md` filled, module created)
+  - Comparison table: step-by-step vs `run` orchestration
+  - Note that both flows produce identical artifacts
+
+### Unchanged
+
+- All commands behave identically — no code/spec change to any individual command
+- `run` workflow unchanged (still default for new users via Quick start)
+- HOW_IT_WORKS already documented step-by-step in cheat-sheet section
+- INTAKE_GUIDE already covers minimum-fill checklist
+
+### Why this is a patch (not minor)
+
+Pure documentation. No new commands, behavior, schema, templates, or flags. Plugin functionality identical to 1.5.11.
+
+### Migration
+
+None needed. Existing users continue to work either way.
+
 ## [1.5.11] - 2026-04-29
 
 Documentation refresh — sync top-level guides with v1.5.10.

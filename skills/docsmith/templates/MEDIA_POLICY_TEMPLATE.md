@@ -5,8 +5,8 @@ Definitive reference for screenshot and video rules in docsmith. Read by `walkth
 ## Why this exists (v1.5.5+)
 
 Before v1.5.5, screenshot and video rules were scattered:
-- Caption rules in `SCREENSHOT_POLICY_TEMPLATE.md`
-- Video markers in `VIDEO_MARKER_TEMPLATE.md`
+- Caption rules in `MEDIA_POLICY_TEMPLATE.md § 3.5`
+- Video markers in `VIDEO_SCRIPT_TEMPLATE.md § VIDEO marker`
 - Privacy fields in module intake
 - No density rules (1 ảnh / N từ?), no length rules, no voiceover policy, no per-locale strategy
 
@@ -103,7 +103,7 @@ When project has multiple locales, decide if screenshots are localized:
 Per-locale screenshots:
 - [x] Source-only — capture EN, reuse for VI/JP (default)
 - [ ] Per-locale — capture per target locale
-- [ ] Hybrid — see SCREENSHOT_POLICY for "important touchpoints" list
+- [ ] Hybrid — see MEDIA_POLICY § 3 for "important touchpoints" list
 ```
 
 ### Image namespacing per locale
@@ -122,6 +122,97 @@ Deploy maps these to:
 ```
 
 In v1.5.5 minimal scope, default is **source-only**. Per-locale paths are supported but require explicit opt-in.
+
+---
+
+## 3.5 Caption writing rules (consolidated v1.5.14+)
+
+The caption is the **contract** between the doc and the screenshot. The walkthrough uses the caption to match content. Vague captions cause wrong screenshots.
+
+### When to include a screenshot
+
+Include when AT LEAST ONE applies:
+- UI element has to be located (saves the user from "the small icon in the top right corner with three dots")
+- State changes visibly (modal opens, form submitted, item moves)
+- Confirmation of success (end of procedure)
+- Layout matters (dashboards, list views with key columns)
+
+Do NOT include when:
+- Content is a definition/concept/list (use table or diagram)
+- Content is CLI input/output (use code block — searchable, accessible)
+- Screenshot would only show generic chrome (browser tabs, OS taskbar)
+- State shown is identical to a screenshot two paragraphs above
+
+### Rule A: Describe what is on screen, not what the user does
+
+| Bad (action) | Good (state) |
+|---|---|
+| `![Click the Create button](...)` | `![Compute Instances list with empty state and Create button visible at top right](...)` |
+| `![Filling out the form](...)` | `![Create Instance form with Name field set to "demo-vm" and Ubuntu 22.04 selected](...)` |
+| `![Submit the form](...)` | `![Create Instance form fully filled, Submit button enabled](...)` |
+
+### Rule B: Be specific about data and state
+
+| Vague | Specific |
+|---|---|
+| `![Instance list](...)` | `![Instance list with 3 running instances sorted by creation date](...)` |
+| `![Settings page](...)` | `![Settings > Network tab with "Auto-assign IP" enabled](...)` |
+| `![Dashboard](...)` | `![Dashboard showing 0 alerts and 5 active resources](...)` |
+
+### Rule C: Reference UI by label, not by appearance
+
+Labels are stable across themes; colors and positions are not.
+
+| Bad | Good |
+|---|---|
+| `![The blue button at the top](...)` | `![Page header with "Create Instance" button](...)` |
+| `![Icon in the corner](...)` | `![Page header with Help icon (question mark)](...)` |
+
+### Rule D: Place the placeholder AFTER the step it illustrates
+
+The walkthrough builds context from the lines above the placeholder. Putting the screenshot before the step leaves the placeholder context-free.
+
+```markdown
+3. Click **Create Instance**.
+
+   ![Compute Instances list with Create Instance button highlighted](https://placehold.co/600x400)
+
+4. In the form, enter the instance name and select an image.
+
+   ![Create Instance form with Name and Image fields filled](https://placehold.co/600x400)
+```
+
+### File naming conventions
+
+- Lowercase, hyphen-separated, no spaces
+- Named for **what the asset is**, not what it looks like
+- Folder by module, not by doc
+
+```
+documentation/images/
+├── instances/
+│   ├── instances-list-empty.png
+│   ├── instance-create-form-empty.png
+│   ├── instance-create-form-filled.png
+│   └── instance-create-success.png
+├── storage/
+│   └── ...
+```
+
+Bad: `screenshot-of-blue-button.png`, `step-3.png`, `image1.png`
+Good: `instance-create-form-filled.png`, `network-settings-firewall-rules.png`
+
+### State that cannot be reproduced
+
+If a screenshot requires data state AI cannot create reliably (long-running process, specific historical data, customer records), **keep the placeholder** in the doc and document the reason in the walkthrough execution record. Don't delete; don't capture inaccurate substitute.
+
+### Pre-walkthrough caption review
+
+Before `walkthrough` captures, it presents the screenshot capture plan for review. Captions that fail Rules A–C are flagged. Fix in draft, re-run.
+
+### When in doubt
+
+A good caption is one where someone reading ONLY the caption (no surrounding text) could roughly imagine what the screenshot shows. If you cannot, neither can the AI.
 
 ---
 

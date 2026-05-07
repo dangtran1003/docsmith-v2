@@ -1,6 +1,6 @@
-# So sánh: v1.1.0 vs v1.5.10
+# So sánh: v1.1.0 vs v1.5.14
 
-Self-review so sánh release đầu tiên (v1.1.0) với release hiện tại (v1.5.10). Mục đích: kiểm tra skill có thay đổi quá nhiều, drift khỏi original goals, hay grow scope hợp lý.
+Self-review so sánh release đầu tiên (v1.1.0) với release hiện tại (v1.5.14). Mục đích: kiểm tra skill có thay đổi quá nhiều, drift khỏi original goals, hay grow scope hợp lý.
 
 > 🇬🇧 English version: [COMPARISON.md](COMPARISON.md)
 
@@ -18,7 +18,7 @@ Self-review so sánh release đầu tiên (v1.1.0) với release hiện tại (v
 
 ## Snapshot 2 versions
 
-|                          | v1.1.0 (initial)        | v1.5.10 (hiện tại)                                            | Delta    |
+|                          | v1.1.0 (initial)        | v1.5.14 (hiện tại)                                            | Delta    |
 | ------------------------ | ----------------------- | ------------------------------------------------------------ | -------- |
 | **Release date**         | 2026-04-26              | 2026-04-29                                                   | 3 ngày   |
 | **Total files**          | 21                      | 41                                                           | +95%     |

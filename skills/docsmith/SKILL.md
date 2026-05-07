@@ -283,9 +283,12 @@ If state stale (>7 days) or workspace modified outside docsmith since last `run`
 Individual pipeline stages. Each:
 
 - Reads resolved config from intake
+- **Interactive fill** (v1.5.13+): if a stage requires an empty intake field, AI prompts user inline and writes the answer back to intake. Avoids upfront full-form fill. See [intake-reference.md § 10](intake-reference.md) for per-stage required fields and prompt format.
 - Re-run protocol applies (if output exists, gate)
 - Writes to its conventional output path
 - Returns control (does NOT chain to next stage; that's `run`'s job)
+
+**Skip prompts with `--no-prompt`**: any stage command accepts `--no-prompt` flag. Behavior: fail immediately if a required field is empty (old behavior). Useful for CI scripts that shouldn't pause for user input.
 
 Specific behaviors:
 
@@ -298,13 +301,15 @@ Flags:
 
 **`voice`** — outputs: `documentation/standards/voice-chart.md` from [templates/VOICE_CHART_TEMPLATE.md](templates/VOICE_CHART_TEMPLATE.md). With `--full`, also generates UX text patterns and content scorecard (these were standard in v1.4.x; now opt-in for lean default).
 
-**`draft`** — outputs: `documentation/drafts/<source-locale>/<feature>/<doc>.md`. Reads cached sources from `.cache/sources/`. Uses [templates/CONTENT_TYPE_TEMPLATES.md](templates/CONTENT_TYPE_TEMPLATES.md). Image refs: workspace-absolute paths `/images/<feature>/<asset>.png`. Caption rules per [templates/SCREENSHOT_POLICY_TEMPLATE.md](templates/SCREENSHOT_POLICY_TEMPLATE.md). Video markers per [templates/VIDEO_MARKER_TEMPLATE.md](templates/VIDEO_MARKER_TEMPLATE.md).
+**`draft`** — outputs: `documentation/drafts/<source-locale>/<feature>/<doc>.md`. Reads cached sources from `.cache/sources/`. Uses [templates/CONTENT_TYPE_TEMPLATES.md](templates/CONTENT_TYPE_TEMPLATES.md). Image refs: workspace-absolute paths `/images/<feature>/<asset>.png`. Caption rules per [templates/MEDIA_POLICY_TEMPLATE.md § 3.5](templates/MEDIA_POLICY_TEMPLATE.md). Video markers per [templates/VIDEO_SCRIPT_TEMPLATE.md § VIDEO marker](templates/VIDEO_SCRIPT_TEMPLATE.md).
 
 **`edit`** — five passes: voice match, UX patterns, clarity, accuracy markers, link/cross-ref. With `--from-review <file>`, applies a reviewer's feedback file (Markdown with `// FEEDBACK:` annotations or block comments).
 
 ### `walkthrough` (AI)
 
 **Prerequisites**: browser automation tool (Claude in Chrome extension OR Playwright MCP) AND test account credentials set as env vars. See [SETUP.md](../../SETUP.md) — section "Path 1: Claude in Chrome" or "Path 2: Playwright MCP".
+
+**Interactive fill (v1.5.13+)**: if product URL or credentials env vars are empty in intake, AI prompts user inline and writes back. Verifies env vars are actually set in shell before proceeding. See [intake-reference.md § 10](intake-reference.md) — section "walkthrough" required fields.
 
 **Media policy**: respects screenshot density rules and per-locale strategy from project intake § 11 (and module intake § 8 overrides). Default behavior is "source-only" capture (one screenshot reused across all locales). See [templates/MEDIA_POLICY_TEMPLATE.md](templates/MEDIA_POLICY_TEMPLATE.md) for density rules per content type, style options, and aspect ratio.
 
@@ -337,6 +342,8 @@ Items marked `product-bug` tracked in `walkthrough/active-product-bugs.yaml` acr
 
 **Prerequisites**: same as `walkthrough` PLUS ffmpeg installed for video encoding. If voiceover strategy is "AI synthetic voice", also need TTS provider configured (project intake § 11). For local TTS (default): Piper or Coqui binaries installed. For remote TTS: API auth env var set. See [SETUP.md](../../SETUP.md) — section "Path 3: For `record` (tutorial videos)".
 
+**Interactive fill (v1.5.13+)**: if voiceover strategy = "AI synthetic voice" and TTS provider/voice ID not set, AI prompts inline and writes back. Silent strategy (default) requires no prompts. See [intake-reference.md § 10](intake-reference.md) — section "record" required fields.
+
 **Media policy**: respects video density rules, length caps, voiceover strategy, and TTS provider from project intake § 11 (and module intake § 8 overrides). Default behavior is "Silent + on-screen captions" (no audio, no TTS needed). See [templates/MEDIA_POLICY_TEMPLATE.md](templates/MEDIA_POLICY_TEMPLATE.md) § 4-7 for full options.
 
 **Script files (v1.5.7+)**: each video has its own script file at `documentation/scripts/<module>/<id>.md`. Script contains source-language narration plus per-locale translations. Voiceover (TTS or human) reads from this file. See [templates/VIDEO_SCRIPT_TEMPLATE.md](templates/VIDEO_SCRIPT_TEMPLATE.md) for format.
@@ -356,13 +363,15 @@ Items marked `product-bug` tracked in `walkthrough/active-product-bugs.yaml` acr
 **Flags**:
 - `--migrate-scripts` — for v1.5.6-or-earlier drafts: extract inline scripts from VIDEO markers, create new script files, simplify markers
 - `--check` — validate script files exist for all VIDEO markers; report missing/stale; no audio/video generation
-- `--re-record <id>` — force re-record of one video even if cached See [templates/VIDEO_MARKER_TEMPLATE.md](templates/VIDEO_MARKER_TEMPLATE.md) for marker syntax and [templates/WALKTHROUGH_VIDEO_PLAN_TEMPLATE.md](templates/WALKTHROUGH_VIDEO_PLAN_TEMPLATE.md) for capture plan.
+- `--re-record <id>` — force re-record of one video even if cached. See [templates/VIDEO_SCRIPT_TEMPLATE.md](templates/VIDEO_SCRIPT_TEMPLATE.md) for marker syntax and per-video script format.
 
 After recording: replaces marker with `<video>` embed, preserves marker as comment for re-record.
 
 ### `translate` (AI)
 
 **Required** when `locales.targets` non-empty. Position: after `edit`, before `deploy`.
+
+**Interactive fill (v1.5.13+)**: if `locales.targets` is empty, AI prompts user to pick target languages and writes back to project intake § 3. See [intake-reference.md § 10](intake-reference.md) — section "translate" required fields.
 
 **Default review mode**: `batch` (whole-file diff review). User can opt into `--per-block` for safer per-block review.
 

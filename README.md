@@ -2,7 +2,7 @@
 
 A Claude Code skill that builds technical documentation from filled markdown intake forms. Drafts content, captures screenshots via browser walkthrough, generates voiceover videos, translates to multiple locales, and deploys to Docusaurus.
 
-**Current version**: 1.5.11 ([CHANGELOG](CHANGELOG.md))
+**Current version**: 1.5.14 ([CHANGELOG](CHANGELOG.md))
 
 > 🇻🇳 Tiếng Việt: [README.vi.md](README.vi.md) (coming soon — for now, [INTAKE_GUIDE.vi.md](INTAKE_GUIDE.vi.md) and [SETUP.vi.md](SETUP.vi.md) cover the basics)
 
@@ -125,6 +125,61 @@ Cheap metadata calls (no full re-fetch) detect what changed. Three-layer change 
 - **Scope drift**: existing module's features lag source
 
 You review proposed deltas before applying. For projects with many new modules (>5), AI MAY use parallel processing.
+
+### Step-by-step alternative (granular control)
+
+If you prefer running each pipeline stage manually instead of using `run` to auto-chain, every individual command from earlier docsmith versions still works in v1.5.x. Useful when you want to review output between every stage, or when teaching docsmith to a new BA one step at a time.
+
+**Two ways to drive the intake (v1.5.13+)**:
+
+- **Pre-fill mode**: edit `project.md` and `modules/<n>.md` BEFORE running stages. Each field has inline `>` hints explaining what to put. Skip Advanced sections.
+- **Interactive mode**: skip the upfront fill. Run a stage; if it needs missing intake fields, AI prompts you inline (5-10 questions per stage at most), writes answers back to intake, then continues. Distributed Q&A across stages instead of one big form.
+
+```bash
+# Setup (one-time per project)
+/docsmith init
+/docsmith module myproduct
+# Either: fill documentation/intake/project.md and modules/myproduct.md NOW
+# Or: skip; AI will ask when each stage needs info
+
+# Run each stage individually, review output between
+/docsmith audience myproduct          # Asks audience questions if not pre-filled
+/docsmith plan myproduct              # → documentation/plan/documentation-plan.md + sitemap.md
+/docsmith voice                       # Uses defaults silently if not pre-filled
+/docsmith draft myproduct             # Asks about sources if not set
+/docsmith edit myproduct              # 5-pass self-review of drafts
+/docsmith walkthrough myproduct       # Asks for product URL + credential env vars if missing
+/docsmith record myproduct            # videos (optional); asks TTS provider if AI voice selected
+/docsmith translate myproduct         # Asks target languages if not set
+/docsmith verify myproduct            # 11-check audit
+/docsmith deploy --dry-run            # preview deploy
+/docsmith deploy                      # apply
+```
+
+**Skip prompts with `--no-prompt`**: any stage command accepts `--no-prompt` flag. Behavior: fail immediately if a required field is empty. Useful for CI scripts that shouldn't pause.
+
+```bash
+/docsmith audience myproduct --no-prompt   # fails fast if intake incomplete
+```
+
+Two requirements before any stage runs on a module:
+
+1. **`project.md` exists** (created by `init`)
+2. **`modules/<n>.md` exists** (created by `/docsmith module <n>`)
+
+Files don't need to be filled — interactive fill (v1.5.13+) populates as you go.
+
+**Difference from `run` orchestration**:
+
+| Aspect | Step-by-step | `run` |
+|---|---|---|
+| User reviews between stages | Always | Only at configured pause gate |
+| Stage chaining | Manual | Automatic |
+| Pause gate config | Ignored | Active |
+| Skip individual stages | Easy (just don't run) | Harder (need flags) |
+| Drift action prompts | Per-stage when run | Centralized at walkthrough gate |
+
+Both flows produce identical artifacts. Pick whichever feels more comfortable.
 
 ## All commands at a glance
 

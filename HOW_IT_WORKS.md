@@ -4,7 +4,7 @@ The full operating model of docsmith — every command, every file, the lifecycl
 
 > 🇻🇳 Bản tiếng Việt: [HOW_IT_WORKS.vi.md](HOW_IT_WORKS.vi.md)
 
-> Last updated for v1.5.10. For just running commands, see [README.md](README.md). For filling intake forms, see [INTAKE_GUIDE.md](INTAKE_GUIDE.md).
+> Last updated for v1.5.14. For just running commands, see [README.md](README.md). For filling intake forms, see [INTAKE_GUIDE.md](INTAKE_GUIDE.md).
 
 ## TL;DR
 

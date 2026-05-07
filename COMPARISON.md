@@ -1,6 +1,6 @@
-# Comparison: v1.1.0 vs v1.5.10
+# Comparison: v1.1.0 vs v1.5.14
 
-Self-review comparing the first release (v1.1.0) with the current release (v1.5.10). Purpose: check whether the skill has changed too much, drifted from original goals, or grown in scope appropriately.
+Self-review comparing the first release (v1.1.0) with the current release (v1.5.14). Purpose: check whether the skill has changed too much, drifted from original goals, or grown in scope appropriately.
 
 > 🇻🇳 Bản tiếng Việt: [COMPARISON.vi.md](COMPARISON.vi.md)
 
@@ -18,7 +18,7 @@ Self-review comparing the first release (v1.1.0) with the current release (v1.5.
 
 ## Snapshot of both versions
 
-|                          | v1.1.0 (initial)        | v1.5.10 (current)                                            | Delta    |
+|                          | v1.1.0 (initial)        | v1.5.14 (current)                                            | Delta    |
 | ------------------------ | ----------------------- | ------------------------------------------------------------ | -------- |
 | **Release date**         | 2026-04-26              | 2026-04-29                                                   | 3 days   |
 | **Total files**          | 21                      | 41                                                           | +95%     |

@@ -4,7 +4,7 @@ Mô hình vận hành đầy đủ của docsmith — mỗi command, mỗi file,
 
 > 🇬🇧 English version: [HOW_IT_WORKS.md](HOW_IT_WORKS.md)
 
-> Cập nhật cho v1.5.10. Để chạy command thông thường, xem [README.md](README.md). Để điền intake forms, xem [INTAKE_GUIDE.vi.md](INTAKE_GUIDE.vi.md).
+> Cập nhật cho v1.5.14. Để chạy command thông thường, xem [README.md](README.md). Để điền intake forms, xem [INTAKE_GUIDE.vi.md](INTAKE_GUIDE.vi.md).
 
 ## TL;DR
 

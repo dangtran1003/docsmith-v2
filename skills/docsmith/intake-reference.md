@@ -946,7 +946,247 @@ Beyond initial fill, `update --from-source` compares current workspace modules w
 
 ---
 
-## 10. Known limitations (v1.5.0)
+## 10. Interactive fill protocol (v1.5.13+)
+
+When a pipeline command runs and finds critical intake fields empty, AI asks the user inline rather than failing. Answers are written back to the intake file, so the next run finds the fields already populated.
+
+This pattern lets users skip the upfront 354-line intake fill and instead answer minimal questions just-in-time, distributed across the pipeline stages they actually run.
+
+### 10.1 When does interactive fill activate?
+
+When ALL of these are true:
+
+1. User runs a stage command (`audience`, `plan`, `voice`, `draft`, `edit`, `walkthrough`, `record`, `translate`)
+2. Stage requires fields that resolve to "empty" via the layered config (module → project → defaults)
+3. The empty field is **critical** for that stage (not a nice-to-have with a safe default)
+
+Otherwise: stage proceeds normally with available fields.
+
+### 10.2 Per-stage required fields (interactive prompts)
+
+Each stage has a minimal set of fields it must have before proceeding. Below is the canonical list. If any is empty when stage runs, AI prompts and writes back.
+
+#### `audience`
+
+Critical:
+- Audience > Primary persona > Role
+- Audience > Primary persona > Technical level
+- Audience > Primary persona > Primary goal
+
+Prompt example:
+```
+Stage: audience for module 'instances'
+
+I need a few details before I can write the audience profile.
+
+Q1: Who is the primary user? Job title or role.
+> DevOps Engineer
+
+Q2: Technical level? [low / medium / high]
+> medium
+
+Q3: What's their primary goal when using MyCloud?
+> Deploy services to production with minimal ops overhead
+
+✓ Saved to documentation/intake/project.md (§ 2 Audience)
+✓ Continuing audience generation...
+```
+
+#### `plan`
+
+Critical:
+- Module > Scope > At least one feature with at least one content type
+- Project > Sitemap pattern (defaults to A if missing)
+
+Plan rarely triggers prompts because `module` command already enforces feature definition. If pattern empty, defaults to A silently.
+
+#### `voice`
+
+Critical:
+- Project > Voice > Tone (defaults to friendly-professional silently — NO prompt)
+- Project > Voice > Perspective (defaults to second-person silently)
+- Project > Voice > Reading level (defaults to 8th-grade silently)
+
+`voice` does NOT trigger prompts. All voice fields have defaults that work for most projects. User can still override by editing intake before running `voice` if desired.
+
+#### `draft`
+
+Critical:
+- Module > Scope > Features with content types (caught earlier by `plan`)
+- Project > Sources (at least one source OR explicit "no sources" confirmation)
+
+Prompt example when no sources defined:
+```
+Stage: draft for module 'instances'
+
+You haven't added knowledge sources to project.md.
+AI will draft from intake info only (no external context).
+
+Continue? [Y/n]: y
+✓ Marked "no external sources" in project.md (§ 6)
+✓ Continuing draft generation...
+```
+
+#### `edit`
+
+No prompts. Edit operates on existing drafts only.
+
+#### `walkthrough`
+
+Critical:
+- Project > Credentials > Username env var
+- Project > Credentials > Password env var
+- Product URL
+
+Prompt example:
+```
+Stage: walkthrough for module 'instances'
+
+I need product credentials and URL before I can verify against the live UI.
+
+Q1: What's the product URL? (where the user-facing app runs)
+> https://console.mycloud.com
+
+Q2: Test account username — provide the env var NAME (not the username itself)
+> MYCLOUD_TEST_USER
+
+Q3: Test account password env var NAME
+> MYCLOUD_TEST_PASS
+
+✓ Saved to documentation/intake/project.md (§ 1, § 5)
+
+Verifying env vars are set in your shell...
+✗ MYCLOUD_TEST_USER is empty
+✗ MYCLOUD_TEST_PASS is empty
+
+Please run before retrying:
+  export MYCLOUD_TEST_USER="qa-bot@example.com"
+  export MYCLOUD_TEST_PASS="..."
+
+Then run /docsmith walkthrough instances again.
+```
+
+#### `record`
+
+Critical (only if VIDEO markers present in drafts):
+- Project > Media > Voiceover strategy (defaults to silent silently — NO prompt)
+- TTS provider (only if voiceover = AI, and only first time)
+- Voice ID per locale (only if voiceover = AI per-locale, and only for unticked locales)
+
+Prompt only fires when AI voiceover selected and provider/voice not yet specified.
+
+#### `translate`
+
+Critical:
+- Project > Languages > Target languages (at least one ticked)
+
+Prompt example when no targets:
+```
+Stage: translate for module 'instances'
+
+No target languages set in project.md (§ 3).
+What languages should I translate to?
+
+[ ] Vietnamese (vi)
+[ ] Japanese (jp)
+[ ] Other: ___
+
+Tick one or more (comma-separated): vi
+✓ Saved to documentation/intake/project.md (§ 3 Languages)
+✓ Translating to vi...
+```
+
+### 10.3 Write-back format
+
+When AI writes user's answer back to intake, it preserves the existing markdown structure:
+
+- For backtick fields: replace placeholder with answer
+- For checkboxes: change `[ ]` → `[x]` for the chosen option
+- For nested structures (Source N, Feature N): append new block at correct location
+
+Example diff after audience prompt:
+
+```markdown
+# BEFORE
+- Role / job title: `e.g., DevOps Engineer`
+- Technical level:
+  - [ ] Low
+  - [ ] Medium
+  - [ ] High
+- Primary goal: `Why do they use this?`
+
+# AFTER (AI wrote back)
+- Role / job title: `DevOps Engineer`
+- Technical level:
+  - [ ] Low
+  - [x] Medium
+  - [ ] High
+- Primary goal: `Deploy services to production with minimal ops overhead`
+```
+
+The hint comment lines (`> Lowercase, kebab-case...`) are preserved untouched. Same parsing applies on next run.
+
+### 10.4 Write-back idempotency
+
+If user re-runs the stage after answering prompts:
+1. AI re-reads intake
+2. Sees fields now have values
+3. Skips prompts
+4. Proceeds with stage
+
+If user wants to RE-answer (correct a typo, change strategy):
+1. Edit intake manually OR run `/docsmith intake-help <field>` for guided edit
+2. Re-run stage; new value is used
+
+There's no "undo" for AI-written answers. They become normal intake values. User edits override.
+
+### 10.5 Skip prompt with --no-prompt flag
+
+If user wants the old "fail with missing-field error" behavior (e.g., for CI scripts that shouldn't pause):
+
+```bash
+/docsmith audience instances --no-prompt
+# Behavior: if any required field empty, fail immediately
+# (does NOT prompt user)
+```
+
+`--no-prompt` available on all stage commands. Default behavior is interactive prompt (since v1.5.13).
+
+### 10.6 Mixed flows (auto-fill + interactive)
+
+User can combine:
+
+- `init --from-source` fills 80% of fields from BA doc
+- Some fields marked "← AI guess" — user can verify or leave
+- Some critical fields still empty (deploy target, credentials, locales)
+- User runs `/docsmith audience instances`
+- AI sees audience filled (from source), skips Audience prompts
+- User runs `/docsmith walkthrough instances`
+- AI sees credentials empty, prompts them, writes back
+- Continues
+
+Each command checks ITS required fields, doesn't try to validate the whole intake at once. Distributes the prompting load.
+
+### 10.7 Validation order: critical → safe defaults → silent fallback
+
+When checking fields:
+
+1. **Critical for this stage** (table above) → prompt user if empty
+2. **Has safe default** (voice tone, sitemap pattern, screenshot density) → use default silently, don't prompt
+3. **Optional** (secondary persona, advanced media options) → skip unless explicitly set
+
+This keeps prompts minimal. User answers only what's strictly needed.
+
+### 10.8 Limitations
+
+- **No partial answer recovery** — if user types `n` or aborts during a multi-question prompt, AI exits the stage. No "save what you've answered so far" mode. User can re-run; previously-answered fields are remembered.
+- **No prompt for module-specific fields** in stages run at project level — `voice` is project-level; if user wants per-module voice override, must edit module intake manually
+- **No semantic validation of free-text answers** — AI accepts any string for "Primary goal", doesn't verify it's coherent
+- **Order assumption** — AI assumes user runs stages in canonical order. Running `draft` before `audience` triggers more prompts than needed because `draft` would re-ask audience info if missing. Recommend `run` flow OR manual order.
+
+---
+
+## 11. Known limitations (v1.5.0)
 
 1. **No conditional field display** — all sections always shown. BA fills 50 fields even if 30 don't apply. Future: `--minimal` template variant for simple projects.
 2. **Source fetching is synchronous** — large repos can be slow. No parallel fetching in 1.5.0. Future: parallel fetcher with progress bar.
