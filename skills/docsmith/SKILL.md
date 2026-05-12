@@ -388,7 +388,8 @@ Glossary file (per locale): `documentation/standards/glossary.<locale>.yaml` ([t
 
 ### `verify` (AI)
 
-11 checks across drafts:
+**Default 11 checks** (always run):
+
 1. No `placehold.co` URLs remain
 2. No broken image refs
 3. Voice consistency score ≥ threshold
@@ -398,12 +399,77 @@ Glossary file (per locale): `documentation/standards/glossary.<locale>.yaml` ([t
 7. Links resolve (internal)
 8. Cross-references valid
 9. Sitemap entries match draft files
-10. Sitemap consistency: all modules use the project pattern; warns when module is missing a section the project pattern includes (non-blocking)
+10. Sitemap consistency: all modules use the project pattern; warns when module is missing a section the project pattern includes (non-blocking; **blocking with Pattern D — FPT mandatory sections enforced**)
 11. Media compliance (v1.5.5+): screenshots match density policy per content type; videos within length caps; voiceover/subtitle files exist when strategy expects them; per-locale media follows project strategy
+
+**FPT compliance checks 12-22** (v1.6.0+): activated when project intake has `compliance: fpt-user-guide`. See [templates/FPT_TEMPLATES.md § Part 4](templates/FPT_TEMPLATES.md) for full rules.
+
+12. **Page titles** (4.1): sentence case, ≤60 chars, no period/colon at end
+13. **Section headings** (4.2): not numbered, parallel structure within same level
+14. **Introductions** (4.3): ≤2 sentences, lead with user benefit, second person
+15. **Prerequisites** (4.4): plain bullets, no ✅ emoji
+16. **Procedures** (4.5): numbered list, ≤10 steps, each step starts with verb
+17. **Code examples** (4.13): language tag present, SCREAMING_SNAKE_CASE placeholders, ≤20 lines per block
+18. **Button labels** (4.7): no `Click here`, `Nhấn vào đây`
+19. **UI references** (4.12): buttons in bold, navigation paths use `→`
+20. **Callouts** (4.6): ≤2 per section, correct emoji per type (💡/📝/⚠️/🚨)
+21. **Status messages** (4.8-4.9): success/error/loading/empty-state use canonical templates
+22. **Anti-AI-tells** (4.15) — CRITICAL: 6 sub-checks
+    - No ✅ ❌ emoji outside callouts
+    - Em-dashes ≤1 per paragraph
+    - No `...đặc biệt khi X mở rộng qua Y` intro formula
+    - Parallel structure varies naturally (not all bullets ±10% same length)
+    - `Bước tiếp theo` not rigidly 3 items
+    - Verification step used when needed, not rigid in every flow
+
+Checks 12-22 BLOCK deploy when `compliance: fpt-user-guide`. Override: `--force-deploy`. For non-FPT projects, checks 12-22 are skipped.
 
 **Flags**:
 - `[<doc-glob>]` — scope to specific docs (faster iteration)
 - `--locale <locale>` — verify a target locale's drafts
+- `--fpt-only` — run only checks 12-22 (skip 1-11; faster iteration when fixing FPT violations)
+- `--no-fpt` — run only checks 1-11 (skip 12-22; for non-FPT projects regardless of compliance field)
+
+### `score` (AI) — v1.6.0+
+
+**Purpose**: quality scoring against FPT Cloud content standards. 10 criteria × 0-2 = max 20 points. See [templates/SCORECARD_TEMPLATE.md](templates/SCORECARD_TEMPLATE.md) and [templates/FPT_TEMPLATES.md § Part 7](templates/FPT_TEMPLATES.md).
+
+**When to use**:
+- Required when project intake has `compliance: fpt-user-guide` (deploy blocked until pass)
+- Optional otherwise (still useful as quality check)
+- Run after `verify` passes, before `deploy`
+
+**Behavior**:
+
+1. For each draft in scope (module or specific doc):
+   - AI reads draft
+   - Evaluates each of 10 criteria, assigns 0/1/2
+   - Lists evidence per criterion
+   - Lists fix suggestions for criteria scoring <2
+   - Runs anti-AI-tells checklist (6 patterns)
+2. Writes per-doc report: `documentation/score/<module>/<doc>.md`
+3. Writes module summary: `documentation/score/<module>/_summary.md`
+4. Exit:
+   - All docs ≥14 AND no anti-AI-tells violations → success, deploy unblocked
+   - Any doc <14 OR any anti-AI-tells violation → fail, list issues, deploy blocked
+
+**Deploy gate**:
+- `deploy` runs `score` automatically if `compliance: fpt-user-guide` set
+- If gate fails, `deploy` refuses (override: `deploy --force-deploy`)
+- Score reports persisted for audit
+
+**Scoring tiers**:
+- 0-8: Poor — rewrite needed
+- 9-13: Fair — major edits needed
+- 14-17: Good — publishable (deploy-ready)
+- 18-20: Excellent — ready to publish
+
+**Flags**:
+- `<module>` — score one module (default: all modules)
+- `[<doc-glob>]` — scope to specific docs
+- `--locale <locale>` — score translated locale (default: source locale only)
+- `--no-anti-ai-tells` — skip anti-AI-tells checklist (still scores 10 criteria)
+- `--fix` — when criterion <2, AI auto-attempts fix and re-scores (experimental)
 
 ### `update` (AI)
 
@@ -455,20 +521,29 @@ See [deploy-reference.md](deploy-reference.md) § "Categorize subcommand", [temp
 
 Copy/sync workspace to host project with transforms (frontmatter injection, image namespacing `/img/<slug>/`, MDX escape, category generation).
 
+**FPT compliance gate (v1.6.0+)**: when project intake has `compliance: fpt-user-guide`:
+1. `verify` checks 12-22 must pass (anti-AI-tells included)
+2. `score` must show all docs ≥14 (Good tier minimum)
+3. Both auto-run before deploy starts
+4. Failure → deploy refuses; lists issues
+5. Override: `--force-deploy` (logs warning, proceeds anyway)
+
 **Flags**:
 - `--dry-run` — detect + plan, exit without writes
 - `--target <path>` — override `deploy.target_path` for this run
 - `--force` — override conflicts
+- `--force-deploy` (v1.6.0+) — skip FPT compliance gate (verify checks 12-22 + score). Use with caution; logs warning to deployment manifest.
 - `--locale <locale>` — single locale
 - `--sync-deletes` — propagate workspace deletions to target (default: report orphans only)
 
 **Workflow** (full detail: [deploy-reference.md](deploy-reference.md)):
-1. Translation completeness check (warn if `locales.targets` has incomplete translations)
-2. Detect target context (CLAUDE.md, docusaurus.config.*, folder signals)
-3. Plan file actions (create / update / skip / conflict / delete-if-sync)
-4. Show plan; if `--dry-run`, exit
-5. Apply if no unresolved conflicts; create audit folder under `documentation/deployments/`
-6. Save manifest, target-config snapshot, diff, pre-deploy hashes
+1. **FPT compliance gate (if applicable)**: run `verify --fpt-only` + `score`; block on fail
+2. Translation completeness check (warn if `locales.targets` has incomplete translations)
+3. Detect target context (CLAUDE.md, docusaurus.config.*, folder signals)
+4. Plan file actions (create / update / skip / conflict / delete-if-sync)
+5. Show plan; if `--dry-run`, exit
+6. Apply if no unresolved conflicts; create audit folder under `documentation/deployments/`
+7. Save manifest, target-config snapshot, diff, pre-deploy hashes
 
 ### `publish` (Human)
 

@@ -3,6 +3,109 @@
 All notable changes to this skill are documented in this file.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Semantic Versioning](https://semver.org/).
 
+## [1.6.0] - 2026-05-12
+
+FPT Cloud template compliance — first version with organization-specific compliance preset. Adds Sitemap Pattern D, 11 new verify checks (including 6 anti-AI-tells sub-checks), FPT voice chart matrix, and new `score` command with 10-criteria 20-point quality scoring.
+
+### Why
+
+User shared CSO-defined template definition document for FPT Cloud User Guide (7-part spec covering structure, writing rules, voice chart matrix, anti-AI-tells, content scorecard).
+
+Decision: implement Parts 2 (Required Structure), 4 (Content Writing Rules), 5 (Voice Chart), and 7 (Content Scorecard). Skip Parts 1 (focus User Guide only), 3 (metadata governance — derivable from git), 6 (versioning — Docusaurus native).
+
+This is MINOR (not patch) because it adds a new compliance preset and a new command (`score`). Existing projects without `compliance: fpt-user-guide` are unaffected.
+
+### Added
+
+- **`templates/FPT_TEMPLATES.md`** — Master authoritative source for FPT Cloud documentation standards. Covers Parts 1, 2, 4, 5, 7 of CSO template. Parts 3, 6 marked deferred.
+
+- **`templates/SCORECARD_TEMPLATE.md`** — 10-criteria 20-point scorecard template. Per-doc reports + module summaries. Anti-AI-tells bonus checklist (6 patterns, separate from score).
+
+- **Sitemap Pattern D — "FPT User Guide"** in `templates/SITEMAP_PATTERNS_TEMPLATE.md`:
+  - Mandatory: overview, initial-setup, quick-starts, tutorials
+  - Optional: samples, faqs, reference, troubleshooting
+  - Strict enforcement (missing mandatory blocks deploy)
+
+- **FPT Cloud preset in `templates/VOICE_CHART_TEMPLATE.md`**:
+  - 3 Product Principles (Clear / Practical / Consistent)
+  - 6 Aspects × 3 Principles matrix (18 cells)
+  - Vocabulary Guide (EN tech terms, VN actions, FPT product names)
+  - 5 Tone variants (Onboarding / Error / Success / Reference / Warnings)
+  - Quick reference line
+
+- **New `score` command**:
+  - 10 criteria × 0-2 points (max 20)
+  - 4 tiers: Poor (0-8) / Fair (9-13) / Good (14-17) / Excellent (18-20)
+  - Per-doc reports at `documentation/score/<module>/<doc>.md`
+  - Module summary at `documentation/score/<module>/_summary.md`
+  - Deploy gate: ≥14 required when `compliance: fpt-user-guide`
+  - Anti-AI-tells checklist (6 patterns) — separate from score, blocks deploy on violation
+  - Flags: `<module>`, `<doc-glob>`, `--locale`, `--no-anti-ai-tells`, `--fix` (experimental)
+
+- **`verify` extended to 22 checks** (was 11):
+  - Checks 1-11 unchanged
+  - Checks 12-22 activated only when `compliance: fpt-user-guide`:
+    - 12: Page titles (4.1)
+    - 13: Section headings (4.2)
+    - 14: Introductions (4.3)
+    - 15: Prerequisites (4.4)
+    - 16: Procedures (4.5)
+    - 17: Code examples (4.13)
+    - 18: Button labels (4.7)
+    - 19: UI references (4.12)
+    - 20: Callouts (4.6)
+    - 21: Status messages (4.8-4.9)
+    - 22: Anti-AI-tells (4.15) — 6 sub-checks
+  - New flags: `--fpt-only`, `--no-fpt`
+
+- **`deploy` FPT compliance gate**:
+  - Auto-runs `verify --fpt-only` + `score` before sync (when `compliance: fpt-user-guide`)
+  - Blocks deploy if either fails
+  - Override: `--force-deploy`
+
+- **Project intake `compliance` field** in PROJECT_INTAKE_TEMPLATE.md § 4 advanced:
+  - Default: `none` (no enforcement, backward compatible)
+  - Option: `fpt-user-guide` (activates Pattern D + FPT voice + checks 12-22 + score gate)
+
+### Changed
+
+- **`SKILL.md` `verify` section** — documents 22 checks, new flags
+- **`SKILL.md`** — adds `score` command between `verify` and `update`
+- **`SKILL.md` `deploy` section** — documents FPT compliance gate + `--force-deploy`
+- **`PROJECT_INTAKE_TEMPLATE.md`** — adds compliance preset advanced subsection
+- **`SITEMAP_PATTERNS_TEMPLATE.md`** — adds Pattern D section
+- **`VOICE_CHART_TEMPLATE.md`** — appends FPT preset (existing generic template unchanged)
+
+### Backward compatibility
+
+Default `compliance: none` keeps all v1.5.14 behavior. Plugin functionality identical for projects that don't opt into FPT compliance.
+
+Existing v1.5.14 projects continue to work without modification. To opt in: edit `project.md` § 4 advanced, tick `fpt-user-guide`, re-run `plan` and `voice`.
+
+### Limitations (v1.6.0)
+
+- **AI scoring is heuristic** — AI evaluates each criterion via prose reasoning. Real human scoring may differ. Recommend BA review scorecard reports before trusting deploy gate.
+- **Anti-AI-tells detection by regex/heuristic** — sophisticated AI patterns may slip through.
+- **No automated fix mode (yet)** — `score --fix` experimental. Most fixes require human edit.
+- **Only User Guide compliance** — API Reference, Deployment Guide, etc. not supported. Future versions.
+- **No versioning support** (Part 6 of template) — Docusaurus has native versioning; recommend using directly.
+- **No metadata governance** (Part 3) — derivable from git at deploy time but not enforced in v1.6.0.
+
+### Migration from v1.5.14
+
+No migration required. Default `compliance: none`. To opt into FPT:
+1. Edit `project.md` § 4 advanced; tick `fpt-user-guide`
+2. Re-run `/docsmith plan` (regenerates sitemap with Pattern D)
+3. Re-run `/docsmith voice` (regenerates voice chart with FPT matrix)
+4. Run `/docsmith verify --fpt-only` to see drafts' compliance issues
+5. Run `/docsmith score <module>` to assess quality
+6. Fix until all docs ≥14, no anti-AI-tells violations
+7. `/docsmith deploy` (or `--force-deploy` to bypass gate)
+
+### Testing recommendation
+
+Largest behavior change since v1.5.0. STRONGLY recommend testing on 1 real FPT Cloud doc before relying on compliance gate for production. Compare AI scorecard judgment against human scoring on same doc.
+
 ## [1.5.14] - 2026-04-30
 
 Templates cleanup — remove redundant template files. Pure refactor with no behavior change.

@@ -153,6 +153,26 @@ Custom terms to AVOID: ``
 
 </details>
 
+<details>
+<summary><b>Advanced — compliance preset</b> (v1.6.0+) — using "none" by default</summary>
+
+Force docs to comply with a specific organization's content standards:
+
+- [x] None (default — use generic voice, generic sitemap, no enforcement)
+- [ ] `fpt-user-guide` — FPT Cloud User Guide template
+
+When `fpt-user-guide` selected:
+- `plan` uses Sitemap Pattern D (mandatory: overview, initial-setup, quick-starts, tutorials)
+- `voice` generates FPT Cloud voice chart (3 principles × 6 aspects matrix)
+- `verify` runs 22 checks (11 default + 11 FPT-specific including anti-AI-tells)
+- `score` becomes REQUIRED (10 criteria × 0-2 = 20; ≥14 to deploy)
+- `deploy` runs FPT compliance gate (verify checks 12-22 + score) before sync
+- Override compliance gate: `deploy --force-deploy`
+
+See [templates/FPT_TEMPLATES.md](skills/docsmith/templates/FPT_TEMPLATES.md) for full rules.
+
+</details>
+
 ## 5. Credentials for product walkthrough
 
 > Required only if you'll use `/docsmith walkthrough` or `/docsmith record`. Put ENV VAR NAMES here, never actual passwords.

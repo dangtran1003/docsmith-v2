@@ -94,6 +94,63 @@ custom_order:
 
 Sections not listed are excluded entirely. Pattern C requires the user to think about IA but provides flexibility for unusual products.
 
+### Pattern D: FPT User Guide (v1.6.0+)
+
+Strict pattern enforcing FPT Cloud template requirements (see [FPT_TEMPLATES.md § Part 2](FPT_TEMPLATES.md)). Use this pattern when the documentation is for FPT Smart Cloud products and must comply with CSO-defined standards.
+
+**Mandatory sections** (every module MUST have):
+
+```yaml
+mandatory:
+  - overview         # Maps to FPT "Overview"
+  - initial-setup    # Maps to FPT "Initial setup"
+  - quick-starts     # Maps to FPT "Quick starts"
+  - tutorials        # Maps to FPT "Tutorials"
+```
+
+**Optional sections** (may add per product):
+
+```yaml
+optional:
+  - samples          # Maps to FPT "Samples"
+  - faqs             # Maps to FPT "FAQs"
+  - reference        # FPT-friendly extension
+  - troubleshooting  # FPT-friendly extension
+```
+
+**Section name flexibility**: Optional sections can be renamed per product needs (e.g., "Samples" → "Examples", "FAQs" → "Common questions"). Mandatory sections keep canonical names for AI sitemap generation.
+
+**Enforcement**:
+- If a module is missing ANY mandatory section, `plan` STOPS and prompts user.
+- `verify` Check 8 (sitemap pattern compliance) confirms mandatory presence.
+- Cannot deploy a module that lacks mandatory sections (override with `--force-deploy`).
+
+**Example sitemap output (Pattern D)**:
+
+```markdown
+# Sitemap
+
+## Pattern: D (FPT User Guide)
+
+## instances/
+1. Overview                               (concept, mandatory)
+2. Initial setup                          (how-to, mandatory)
+3. Quick starts
+   - Tạo instance đầu tiên                (tutorial, mandatory)
+4. Tutorials
+   - Deploy ứng dụng với Docker           (tutorial, mandatory)
+   - Cấu hình auto-scaling                (tutorial, mandatory)
+5. Samples                                (optional)
+   - Sample: Node.js app
+   - Sample: Python Flask
+6. FAQs                                   (optional)
+```
+
+**When to use Pattern D**:
+- Target deploy: FPT Cloud docs (`docs.fptcloud.com` or similar)
+- Owner/CSO requires FPT template compliance
+- Project intake `compliance: fpt-user-guide` set
+
 ---
 
 ## 3. Per-module section selection

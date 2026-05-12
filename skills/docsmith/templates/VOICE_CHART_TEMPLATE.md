@@ -74,3 +74,55 @@ Summarize the voice in one sentence that anyone on the team can remember:
 > **"[Product] speaks like [metaphor/role], helping people [goal]."**
 
 For example: *"TAPP speaks like a friendly local who knows every bus route, helping riders get where they're going without hassle."*
+
+---
+
+## FPT Cloud Preset (v1.6.0+)
+
+When project intake has `compliance: fpt-user-guide`, AI generates voice chart using THIS preset instead of the generic template above. This preset directly mirrors [FPT_TEMPLATES.md § Part 5](FPT_TEMPLATES.md) authoritative voice rules.
+
+### Product Principles (FPT)
+
+| # | Principle | Description |
+|---|---|---|
+| 1 | **Clear (Rõ ràng)** | Clear instructions so reader self-serves without calling support |
+| 2 | **Practical (Thực dụng)** | Focus on real value: WHY before HOW, link to business benefit |
+| 3 | **Consistent (Nhất quán)** | Same style, pattern throughout — terminology, structure, tone unified |
+
+### Voice Chart Matrix (FPT)
+
+|  | Clear | Practical | Consistent |
+|---|---|---|---|
+| **Concepts** | Self-service, reduce support dependency | ROI, cost savings, security, risk reduction | Same mental model across modules, familiar UX |
+| **Vocabulary** | Concrete, terse words. `Chọn [Action]` not `Thực hiện thao tác [Action]` | Business value: `giảm chi phí X%` not `tối ưu hóa` | Tech terms in EN unchanged (see Vocabulary Guide) |
+| **Verbosity** | Terse: 1 sentence/step, max 2 lines | Moderate: intro max 2 sentences explaining WHY, no trailing clauses | Prerequisites thorough, steps terse, callouts 1-2 sentences |
+| **Grammar** | Active voice, imperative: `Nhấn [Button]` not `Nút [Button] được nhấn` | Second person: `bạn chọn`, `bạn có thể`. Present tense | Same sentence structure for all procedure steps |
+| **Punctuation** | Period at end of each step. NO exclamation marks | Em-dash (—) for short inline explanations | Bullet lists no semicolons at end. Heading sentence case |
+| **Capitalization** | Feature/product names follow UI capitalization | Heading sentence case | NO ALL CAPS. NEVER lowercase product names |
+
+### Vocabulary Guide (FPT)
+
+**Technical terms — KEEP English**:
+Instance, VPC, Subnet, Floating IP, Snapshot, Load Balancer, Security Group, Container, Pod, Cluster, Namespace, Volume, Bucket, Region, Zone, API, SDK, CLI, Dashboard, Webhook, Token, OAuth, JWT, REST, GraphQL, SSH, HTTPS
+
+**Actions — USE Vietnamese**:
+Tạo (Create), Xóa (Delete), Chỉnh sửa (Edit), Lưu (Save), Mở (Open), Đóng (Close), Khởi động (Start), Dừng (Stop), Triển khai (Deploy)
+
+**FPT product names — KEEP unchanged**:
+FPT Cloud Console, Cloud Advisor, Cost Explorer, FPT Object Storage, FPT Container Service
+
+### Tone Variants (FPT)
+
+| Context | Tone | Example |
+|---|---|---|
+| **Onboarding** | Warm, encouraging | `Hãy bắt đầu bằng việc [action] để [benefit].` |
+| **Error Messages** | Calm, solution-oriented | `Không thể [action]. Kiểm tra [cause] hoặc liên hệ Admin.` |
+| **Success** | Concise, positive | `[Object] đã được [action] thành công.` |
+| **Technical Reference** | Precise, neutral | `[Concept] gồm [component A] và [component B].` |
+| **Warnings** | Direct, clear consequences | `Khi [action], [consequence]. Hành động không thể hoàn tác.` |
+
+### Quick Reference (FPT)
+
+> **"FPT Cloud docs speak like a senior DevOps engineer who explains things to a colleague — direct, terse, value-oriented, never condescending."**
+
+When `voice` command runs with `compliance: fpt-user-guide`, AI fills audience-specific examples (product name, modules, etc.) into the FPT preset rather than asking user to write a custom voice chart from scratch.

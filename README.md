@@ -2,7 +2,7 @@
 
 A Claude Code skill that builds technical documentation from filled markdown intake forms. Drafts content, captures screenshots via browser walkthrough, generates voiceover videos, translates to multiple locales, and deploys to Docusaurus.
 
-**Current version**: 1.5.14 ([CHANGELOG](CHANGELOG.md))
+**Current version**: 1.6.0 ([CHANGELOG](CHANGELOG.md))
 
 > 🇻🇳 Tiếng Việt: [README.vi.md](README.vi.md) (coming soon — for now, [INTAKE_GUIDE.vi.md](INTAKE_GUIDE.vi.md) and [SETUP.vi.md](SETUP.vi.md) cover the basics)
 
@@ -199,13 +199,31 @@ Both flows produce identical artifacts. Pick whichever feels more comfortable.
 | `walkthrough` | Verify against live product + capture screenshots                     |
 | `record`      | Record short tutorial videos (silent or voiced)                       |
 | `translate`   | Translate to target locales with glossary                             |
-| `verify`      | 11-check audit (placeholders, voice score, links, etc.)               |
+| `verify`      | 11-check audit (22 checks when FPT compliance enabled, v1.6.0+)       |
+| `score`       | 10-criteria quality scorecard (v1.6.0+, required for FPT compliance)  |
 | `update`      | Detect external source changes, propose draft updates                 |
 | `categorize`  | Generate `_category_.json` for Docusaurus                             |
 | `deploy`      | Sync workspace to Docusaurus repo                                     |
 | `publish`     | Final checklist (human step — git commit + push)                      |
 
 Most users only need: `init`, `module`, `run`, `deploy`. The rest are individual stages of the pipeline.
+
+### FPT Cloud compliance mode (v1.6.0+)
+
+For FPT Cloud documentation, opt into compliance preset in `project.md` § 4 advanced:
+
+```
+- [x] `fpt-user-guide`
+```
+
+Activates:
+- **Sitemap Pattern D** — mandatory sections enforced (Overview, Initial setup, Quick starts, Tutorials)
+- **FPT voice chart matrix** — 3 principles × 6 aspects
+- **22 verify checks** — including 6 anti-AI-tells sub-checks
+- **`score` command required** — 10 criteria × 0-2 points, must ≥14 to deploy
+- **Deploy gate** — auto-runs verify + score; blocks on fail; override `--force-deploy`
+
+See [skills/docsmith/templates/FPT_TEMPLATES.md](skills/docsmith/templates/FPT_TEMPLATES.md) for full rules.
 
 ## What gets generated
 
